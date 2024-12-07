@@ -25,6 +25,10 @@ sys.setrecursionlimit(1073741824)
 
 INPUT = "input_test" if len(sys.argv) > 1 and sys.argv[1] == "--test" else "input"
 
+def print_divider():
+    print("=" * 80)
+    print("\n")
+
 with open(INPUT, 'r') as f:
 
 EOF
