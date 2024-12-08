@@ -4,18 +4,41 @@ from collections import defaultdict
 import math
 sys.setrecursionlimit(1073741824)
 
-INPUT = "input_test" if len(sys.argv) > 1 and sys.argv[1] == "--test" else "input"
+def blue(text):
+    return f"\033[94m{text}\033[0m"
 
-def print_divider():
-    print("=" * 80)
-    print("\n")
+def green(text):
+    return f"\033[92m{text}\033[0m"
+
+def red(text):
+    return f"\033[91m{text}\033[0m"
+
+def print_str(*args):
+    print(" ".join(args))
+
+def print_divider(divider="=", length=80):
+    print(divider*length, "\n")
+
+def exit():
+    print_str("Exiting...")
+    sys.exit()
+
+if len(sys.argv) < 2:
+    print_str("Please specify input file.")
+    exit()
+if sys.argv[1] not in ["input", "input_test"]:
+    print_str("Invalid input file provided. Should be one of ", blue("input "),
+              "or ", blue("input_test"))
+    exit()
+if len(sys.argv) > 2:
+    print_str("Unrecognized arguments provided.")
+    exit()
+
+INPUT = sys.argv[1]
 
 DOT = "."
 STAR = "*"
 HASH = "#"
-grid = []
-counter = 0
-antennas = defaultdict(list)
 
 with open(INPUT, "r") as f:
     inputs = [[c for c in r.strip()] for r in f.readlines()]
@@ -25,7 +48,9 @@ num_cols = len(inputs[0])
 
 for row in range(num_rows):
     for col in range(num_cols):
+        pass
         char = inputs[row][col]
+antennas = defaultdict(list)
         if char != DOT:
             antennas[char].append((row, col))
 
@@ -62,22 +87,10 @@ def orient_points(a, b):
         else:
             return b, a
 
-def blue(text):
-    return f"\033[94m{text}\033[0m"
-
-def green(text):
-    return f"\033[92m{text}\033[0m"
-
-def red(text):
-    return f"\033[91m{text}\033[0m"
-
 def is_valid(point):
     row, col = point
 
     return not (row < 0 or col < 0 or row >= num_rows or col >= num_cols)
-
-def print_str(*args):
-    print(" ".join(args))
 
 handled_pairs = set()
 antinodes = set()
@@ -85,7 +98,7 @@ current_char = None
 for antenna, all_coords in antennas.items():
     counter = 0
     local_antinodes = set()
-    print("=" * 80)
+    print_divider()
     print(f"{antenna}: {len(all_coords)}")
     print("-" * 10)
     for first in all_coords:
@@ -135,7 +148,6 @@ for antenna, all_coords in antennas.items():
             else:
                 output_str += inputs[r][c]
         print(output_str)
-    #input()
 
-print("-" * 30)
+print_divider("-", 30)
 print(f"Total antinodes: {len(antinodes)}")
