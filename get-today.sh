@@ -20,6 +20,16 @@ from collections import defaultdict
 import math
 sys.setrecursionlimit(1073741824)
 
+DOT = "."
+STAR = "*"
+HASH = "#"
+DASH = "-"
+EQUAL = "="
+FULL = 80
+HALF = 40
+QUARTER = 20
+TINY = 10
+
 def blue(text):
     return f"\033[94m{text}\033[0m"
 
@@ -32,7 +42,7 @@ def red(text):
 def print_str(*args):
     print(" ".join(args))
 
-def print_divider(divider="=", length=80):
+def print_divider(divider=EQUAL, length=FULL):
     print(divider*length, "\n")
 
 def exit():
@@ -52,10 +62,6 @@ if len(sys.argv) > 2:
 
 INPUT = sys.argv[1]
 
-DOT = "."
-STAR = "*"
-HASH = "#"
-
 with open(INPUT, "r") as f:
     inputs = [[c for c in r.strip()] for r in f.readlines()]
 
@@ -65,5 +71,4 @@ num_cols = len(inputs[0])
 for row in range(num_rows):
     for col in range(num_cols):
         pass
-        char = inputs[row][col]
 EOF
