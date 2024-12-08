@@ -46,11 +46,10 @@ with open(INPUT, "r") as f:
 num_rows = len(inputs)
 num_cols = len(inputs[0])
 
+antennas = defaultdict(list)
 for row in range(num_rows):
     for col in range(num_cols):
-        pass
         char = inputs[row][col]
-antennas = defaultdict(list)
         if char != DOT:
             antennas[char].append((row, col))
 
