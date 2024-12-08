@@ -24,7 +24,7 @@ def red(text):
     return f"\033[91m{text}\033[0m"
 
 def print_str(*args):
-    print(" ".join(args))
+    print(" ".join(map(str, args)))
 
 def print_divider(divider=EQUAL, length=FULL):
     print(divider*length, "\n")
@@ -101,7 +101,7 @@ def generate_antinodes(point, diff_vec):
     candidate = add(point, diff_vec)
 
     while is_valid(candidate):
-        pool.add(candidate)
+        pool.append(candidate)
         candidate = add(candidate, diff_vec)
 
     return pool
@@ -126,7 +126,7 @@ for antenna, all_coords in antennas.items():
             closer, farther = orient_points(first, second)
 
             if (closer, farther) in handled_pairs:
-                print_str(eval_str, blue("Already handled"))
+                counter -= 1
                 continue
 
             diff_vec = get_diff_vector(closer, farther)
@@ -134,6 +134,8 @@ for antenna, all_coords in antennas.items():
             tmp_antinodes = [
                 *generate_antinodes(closer, negate(diff_vec)),
                 *generate_antinodes(farther, diff_vec),
+                closer,
+                farther,
             ]
 
             antinode_strs = []
@@ -152,13 +154,23 @@ for antenna, all_coords in antennas.items():
     for r in range(len(inputs)):
         output_str = ""
         for c in range(len(inputs[r])):
-            if (r, c) in all_coords:
-                output_str += green(inputs[r][c])
-            elif (r, c) in local_antinodes:
+            if (r, c) in local_antinodes:
                 output_str += blue(HASH)
+            elif (r, c) in all_coords:
+                output_str += green(inputs[r][c])
             else:
                 output_str += inputs[r][c]
         print(output_str)
+
+print_divider()
+for r in range(len(inputs)):
+    output_str = ""
+    for c in range(len(inputs[r])):
+        if (r, c) in antinodes:
+            output_str += blue(HASH)
+        else:
+            output_str += inputs[r][c]
+    print(output_str)
 
 print_divider(DASH, HALF)
 print(f"Total antinodes: {len(antinodes)}")
