@@ -53,11 +53,13 @@ FILE_ENDS = "FILE_ENDS"
 COMPACTED = "COMPACTED"
 SPACES = "SPACES"
 SPACE = "SPACE"
+NUM_BLOCKS = "NUM_BLOCKS"
 
 def parse_inputs(inputs):
     file_id = 0
     location_id = 0
     locations = {
+        NUM_BLOCKS: len(inputs),
         FILES: [],
         SPACES: [],
         FILE_ENDS: {},
@@ -83,14 +85,15 @@ def parse_inputs(inputs):
 def get_checksum(locations):
     cum_sum = 0
 
-    for i in range(len(locations)):
+    for i in locations[COMPACTED]:
         start = f"{blue(cum_sum)} + "
         if locations[i] == DOT:
             continue
 
-        to_add = i * locations[i]
-        cum_sum += to_add
-        print_str(start, green(to_add), red("="), red(cum_sum))
+        cum_sum += i * locations[i]
+        add_str = green(f"{i} * {locations[i]}")
+        sum_str = red(f"= {cum_sum}")
+        print_str(start, add_str, sum_str)
 
     print_divider(DASH, HALF)
     return cum_sum
@@ -99,17 +102,19 @@ def print_locations(locations):
     for k,v in locations.items():
         print_str(green(k), blue(v))
 
-def compact(locations):
+def compact_ltr(locations):
     locations[FILES].sort()
     locations[SPACES].sort()
 
     # By definition, location 0 will contain file block
     locations[COMPACTED].append(locations[FILES].pop(0))
 
-    while max(locations[FILES]) > max(locations[SPACES]):
+    while len(locations[FILES]):
+        print_divider()
         # move any contiguous file blocks over when appropriate
         if locations[FILES][0] == locations[COMPACTED][-1] + 1:
             locations[COMPACTED].append(locations[FILES].pop(0))
+            print("continued")
             continue
 
         space_location = locations[SPACES].pop(0)
@@ -117,10 +122,11 @@ def compact(locations):
         file_id = locations[file_start]
         file_end = locations[FILES].pop(locations[FILES].index(locations[FILE_ENDS][file_id]))
 
-        print_str("Next space:", space_location)
-        print_str("File start:", file_start)
+        print_str("Space Location:", space_location)
         print_str("File id:", file_id)
+        print_str("File start:", file_start)
         print_str("File_end:", file_end)
+        print_divider(DASH, HALF)
 
         ## Needs to all happen at "once":
         locations[space_location] = file_id
@@ -129,6 +135,10 @@ def compact(locations):
         locations[FILE_ENDS][file_id] -= 1
 
         for i in range(len(locations[SPACES])):
+            if file_end < locations[SPACES][i]:
+                locations[SPACES].insert(0, file_end)
+                break
+
             if i+1 == len(locations[SPACES]):
                 locations[SPACES].append(file_end)
                 break
@@ -138,16 +148,53 @@ def compact(locations):
                 break
 
         print_locations(locations)
-        input()
+
+
+def compact_rtl(locations):
+    locations[FILES].sort()
+    locations[SPACES].sort()
+
+    # By definition, location 0 will contain file block
+    locations[COMPACTED].append(locations[FILES].pop(0))
+
+    while len(locations[FILES]):
+        print_divider()
+        # move any contiguous file blocks over when appropriate
+        if locations[FILES][0] == locations[COMPACTED][-1] + 1:
+            locations[COMPACTED].append(locations[FILES].pop(0))
+            print("continued")
+            continue
+
+        print_divider(DASH, HALF)
+        print(f"{len(locations[FILES])} remaining")
+        space_location = locations[SPACES].pop(0)
+        file_location = locations[FILES].pop()
+        file_id = locations[file_location]
+
+        #print_str("Space Location:", space_location)
+        #print_str("File id:", file_id)
+        #print_str("File_location:", file_location)
+        #print_divider(DASH, HALF)
+
+        ## Needs to all happen at "once":
+        locations[space_location] = file_id
+        locations[file_location] = SPACE
+        locations[COMPACTED].append(space_location)
+
+        for i in range(len(locations[SPACES])):
+            if i+1 == len(locations[SPACES]):
+                locations[SPACES].append(file_location)
+                break
+
+            if file_location > locations[SPACES][i] and file_location < locations[SPACES][i+1]:
+                locations[SPACES].insert(i+1, file_location)
+                break
+
+        #print_locations(locations)
 
 locations = parse_inputs(get_inputs())
-print_locations(locations)
+compact_rtl(locations)
 
-compact(locations)
-print_str(compacted_files)
-print_str(locations[FILES])
-print_str(locations[FILE_ENDS])
-
-#print_divider(DASH, HALF)
-#print_str("Checksum: ", green(get_checksum(locations)))
-#print_divider(DASH, HALF)
+print_divider(DASH, HALF)
+print_str("Checksum: ", green(get_checksum(locations)))
+print_divider(DASH, HALF)
