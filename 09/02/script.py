@@ -14,13 +14,13 @@ HALF = 40
 QUARTER = 20
 TINY = 10
 
-def blue(text):
+def b(text):
     return f"\033[94m{text}\033[0m"
 
-def green(text):
+def g(text):
     return f"\033[92m{text}\033[0m"
 
-def red(text):
+def r(text):
     return f"\033[91m{text}\033[0m"
 
 def print_str(*args):
@@ -36,10 +36,12 @@ def exit():
 if len(sys.argv) < 2:
     print_str("Please specify input file.")
     exit()
+
 if sys.argv[1] not in ["input", "input_test"]:
     print_str("Invalid input file provided. Should be one of ", blue("input "),
               "or ", blue("input_test"))
     exit()
+
 if len(sys.argv) > 2:
     print_str("Unrecognized arguments provided.")
     exit()
