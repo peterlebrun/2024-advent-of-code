@@ -4,6 +4,8 @@ from collections import defaultdict
 import math
 sys.setrecursionlimit(1073741824)
 
+ZERO = "0"
+ONE = "1"
 DOT = "."
 STAR = "*"
 HASH = "#"
@@ -23,8 +25,13 @@ def g(text):
 def r(text):
     return f"\033[91m{text}\033[0m"
 
-def print_str(*args):
-    print(" ".join(map(str, args)))
+def lead_zero(num, num_digits = 2):
+    zeroes = num_digits - len(str(num))
+    return f"{'0' * zeroes}{num}" if zeroes >= 0 else f"{num}"
+
+def rpad(text, length = 5):
+    spaces = length - len(text)
+    return f"{text}{' ' * spaces if spaces > 0 else ''}"
 
 def print_divider(divider=EQUAL, length=FULL):
     print(divider*length, "\n")
@@ -34,16 +41,16 @@ def exit():
     sys.exit()
 
 if len(sys.argv) < 2:
-    print_str("Please specify input file.")
+    print("Please specify input file.")
     exit()
 
 if sys.argv[1] not in ["input", "input_test"]:
-    print_str("Invalid input file provided. Should be one of ", b("input "),
+    print("Invalid input file provided. Should be one of ", b("input "),
               "or ", b("input_test"))
     exit()
 
 if len(sys.argv) > 2:
-    print_str("Unrecognized arguments provided.")
+    print("Unrecognized arguments provided.")
     exit()
 
 def get_inputs():

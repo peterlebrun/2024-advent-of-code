@@ -4,6 +4,8 @@ from collections import defaultdict
 import math
 sys.setrecursionlimit(1073741824)
 
+ZERO = "0"
+ONE = "1"
 DOT = "."
 STAR = "*"
 HASH = "#"
@@ -22,6 +24,14 @@ def g(text):
 
 def r(text):
     return f"\033[91m{text}\033[0m"
+
+def lead_zero(num, num_digits = 2):
+    zeroes = num_digits - len(str(num))
+    return f"{'0' * zeroes}{num}" if zeroes >= 0 else f"{num}"
+
+def rpad(text, length = 5):
+    spaces = length - len(text)
+    return f"{text}{' ' * spaces if spaces > 0 else ''}"
 
 def print_str(*args):
     print(" ".join(map(str, args)))
@@ -48,39 +58,27 @@ if len(sys.argv) > 2:
 
 def get_inputs():
     with open(sys.argv[1], "r") as f:
-        return [list(map(int, [*f.strip()])) for f in f.readlines()]
+        return f.readline().strip().split()
 
-grid = get_inputs()
-
-scores = defaultdict(int)
-
-def eval_neighbors(parent_row, parent_col, parent_val, og):
-    for r, c in [
-        ( 0,  1),
-        ( 1,  0),
-        ( 0, -1),
-        (-1,  0),
-    ]:
-        row = parent_row + r
-        col = parent_col + c
-        if row < 0 or col < 0 or row >= len(grid) or col >= len(grid[0]):
+def blink(inputs):
+    outputs = []
+    for i in range(len(inputs)):
+        stone = inputs[i]
+        if stone == ZERO:
+            outputs.append(ONE)
             continue
-        val = grid[row][col]
-        if val == parent_val + 1:
-            if val == 9:
-                scores[og] += 1
-            else:
-                eval_neighbors(row, col, val, og)
 
-print_divider()
-for row in grid:
-    print(row)
+        if len(stone) % 2 == 0:
+            outputs.extend([stone[:len(stone)//2], str(int(stone[len(stone)//2:]))])
+            continue
 
-print_divider(DASH, HALF)
-tree = {}
-for row in range(len(grid)):
-    for col in range(len(grid[0])):
-        if grid[row][col] == 0:
-            tree[(row, col)] = eval_neighbors(row, col, 0, (row, col))
+        outputs.append(str(int(stone) * 2024))
+    return outputs
 
-print(sum([v for _, v in scores.items()]))
+inputs = get_inputs()
+print(inputs)
+for i in range(25):
+    inputs = blink(inputs)
+    print_str(b(rpad(f"{lead_zero(i+1)}:")), g(inputs))
+
+print(len(inputs))
