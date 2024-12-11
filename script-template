@@ -37,7 +37,7 @@ def print_divider(divider=EQUAL, length=FULL):
     print(divider*length, "\n")
 
 def exit():
-    print_str("Exiting...")
+    print("Exiting...")
     sys.exit()
 
 if len(sys.argv) < 2:

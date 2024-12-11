@@ -44,7 +44,7 @@ def print_divider(divider=EQUAL, length=FULL):
     print(divider*length, "\n")
 
 def exit():
-    print_str("Exiting...")
+    print("Exiting...")
     sys.exit()
 
 if len(sys.argv) < 2:
@@ -81,36 +81,32 @@ def blink(inputs):
     return outputs
 
 stones = get_inputs()
-blink_map = {s: blink([s]) for s in stones}
+stone_map = {s: blink([s]) for s in stones}
 
+# probably could also have modeled this as a square matrix and multiplied it by itself 75 times
 #for stone in itertools.chain(*next_iters.values()):
+print(b("Building node mapping..."))
 should_continue = True
 while should_continue:
     # Will stay false unless we find at least one value that doesn't exist yet
     should_continue = False
-    for s in sum(blink_map.values(), []):
-        if s not in blink_map:
+    for s in sum(stone_map.values(), []):
+        if s not in stone_map:
             should_continue = True
-            blink_map[s] = blink([s])
+            stone_map[s] = blink([s])
 
-print(f"Length of blink map: {len(blink_map)}")
+node_weights = {s: [0] for s in stone_map}
 
-# just count the number of splits that occur
-#for s in stones:
-    #print_divider()
-    #next_val = [s]
-    #print(next_val)
-    #num_splits = 0
-    #for i in range(75):
-        #tmp = []
-        #for n in next_val:
-            #tmp.extend(blink_map[n])
-        #next_val = tmp
-        #print(id(i), g(len(next_val)))
-    #break
-
-#for b, children in blink_tree.items():
-node_weights
-tree = {}
 for s in stones:
-    blink_tree =
+    node_weights[s][0] += 1
+
+print(id(0), g(sum([x[-1] for x in node_weights.values()])))
+for i in range(1, 76):
+    for w in node_weights:
+        node_weights[w].append(0)
+
+    for parent, children in stone_map.items():
+        for stone in children:
+            node_weights[stone][i] += node_weights[parent][i-1]
+
+    print(id(i), g(sum([x[-1] for x in node_weights.values()])))
