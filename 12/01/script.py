@@ -132,33 +132,33 @@ def should_add_to_this_group(node, group):
         return True
 
     for direction in [UP, DOWN, LEFT, RIGHT]:
-        print(direction)
-        print(node)
-        input()
         if node[direction] in group:
             return True
 
-total_cost = 0
-for region_id, region in regions.items():
-    groupings = [set()]
-    for coords, node in region.items():
-        did_add_to_group = False
-        for group in groupings:
-            if should_add_to_this_group(node, group):
-                group.add(node)
-                did_add_to_group = True
-        if not did_add_to_group:
-            groupings.add(set([node]))
-    print(groupings)
-    input()
+def evaluate_neighbors(coords, node, original, accum = {}):
+    accum[coords] = node
+    del original[coords]
+    for direction in [UP, DOWN, LEFT, RIGHT]:
+        if node[direction] and node[direction] not in accum:
+            evaluate_neighbors(node[direction], original[node[direction]], original, accum)
 
-    for region in region_list:
+total_cost = 0
+for region_id, plots in regions.items():
+    groupings = []
+    while len(plots):
+        accum = {}
+        seed_coords, seed_node = list(plots.items())[0]
+        accum[seed_coords] = seed_node
+        evaluate_neighbors(seed_coords, seed_node, plots, accum)
+        groupings.append(accum)
+
+    for region in groupings:
         print_divider(DOT, QUARTER)
         area = len(region)
         perimeter = get_perimeter(region)
         cost = area * perimeter
         total_cost += cost
-        print(f"Area: {area} Perimeter: {perimeter} Cost: {cost}")
+        print(f"{id(region_id)} Area: {area} Perimeter: {perimeter} Cost: {cost}")
         for plot, node in region.items():
             print(g(plot), r(node))
 
