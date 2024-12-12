@@ -9,3 +9,5 @@ touch $TODAY/01/input_test
 
 ./get-input.sh $TODAY
 git add $TODAY
+
+tree $TODAY
