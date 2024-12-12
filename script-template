@@ -33,8 +33,11 @@ def rpad(text, length = 5):
     spaces = length - len(text)
     return f"{text}{' ' * spaces if spaces > 0 else ''}"
 
+def id(num):
+    return b(rpad(f"{num}:", 12))
+
 def print_divider(divider=EQUAL, length=FULL):
-    print(divider*length, "\n")
+    print(divider*length)
 
 def exit():
     print("Exiting...")
@@ -55,9 +58,6 @@ if len(sys.argv) > 2:
 
 def get_inputs():
     with open(sys.argv[1], "r") as f:
-        return list(map(int, f.readline().strip()))
+        return [[c for c in r.strip()] for r in f.readlines()]
 
-def parse_inputs(inputs):
-    pass
-
-inputs = get_inputs()
+print(get_inputs())
