@@ -65,21 +65,66 @@ if len(sys.argv) > 2:
 
 ROWS = 103
 COLS = 101
-COLS_HALF = COLS // 2
 ROWS_HALF = ROWS // 2
+COLS_HALF = COLS // 2
 
 points = []
+grid = []
+for i in range(ROWS):
+    grid.append([0] * COLS)
+
+def print_grid():
+    for row in grid:
+        print(''.join([g(col) if col > 0 else " " for col in row]))
+
+print_grid()
 def get_inputs():
     with open(sys.argv[1], "r") as f:
         for row in f.readlines():
             points.append([list(map(int, p.strip()[2:].split(','))) for p in row.strip().split()][::-1])
-            print(points[-1])
+            col, row = points[-1][-1]
+            grid[row][col] += 1
 
 print_divider()
-inputs = get_inputs()
+get_inputs()
+print(len(points))
 
-grid = [[0] * cols] * rows
-for iteration in range(1, 101):
+connected_sum = 0
+visited = set()
+def get_neighbor_count(point):
+    global connected_sum
+    global visited
+    if tuple(point) in visited:
+        return
+
+    col, row = point
+    val = grid[row][col]
+    if val == 0:
+        return
+
+    connected_sum += grid[row][col]
+    visited.add(tuple(point))
+
+    for row_delta, col_delta in [
+        [1, 0],
+        [0, 1],
+        [-1, 0],
+        [0, -1],
+        [1, 1],
+        [1, -1],
+        [-1, 1],
+        [-1, -1],
+    ]:
+        new_row, new_col = row + row_delta, col + col_delta
+        if new_row < 0 or new_col < 0 or new_row >= ROWS or new_col >= COLS:
+            continue
+        get_neighbor_count([new_col, new_row])
+
+iteration = 0
+max_connected_sum = 0
+while True:
+    iteration += 1
+    print(f"Iteration: {iteration}")
     for p in points:
         old_point = p[-1]
         new_point = []
@@ -98,31 +143,12 @@ for iteration in range(1, 101):
         grid[new_point[1]][new_point[0]] += 1
         grid[old_point[1]][old_point[0]] -= 1
 
-for row in grid:
-    print(row)
-
-q1 = 0 # col < COLS_HALF and row < ROWS_HALF
-q2 = 0 # col > COLS_HALF and row < ROWS_HALF
-q3 = 0 # col < COLS_HALF and row > ROWS_HALF
-q4 = 0 # col > COLS_HALF and row > ROWS_HALF
-for p in points:
-    col, row = p[-1]
-    if col == COLS_HALF:
-        continue
-    if row == ROWS_HALF:
-        continue
-    if col < COLS_HALF and row < ROWS_HALF:
-        q1 += 1
-    if col > COLS_HALF and row < ROWS_HALF:
-        q2 += 1
-    if col < COLS_HALF and row > ROWS_HALF:
-        q3 += 1
-    if col > COLS_HALF and row > ROWS_HALF:
-        q4 += 1
-
-print(f"q1: {q1}")
-print(f"q2: {q2}")
-print(f"q3: {q3}")
-print(f"q4: {q4}")
-
-print(f"Safety Factor: {q1 * q2 * q3 * q4}")
+    print_grid()
+    connected_sum = 0
+    visited = set()
+    get_neighbor_count(points[0][-1])
+    if connected_sum > max_connected_sum:
+        max_connected_sum = connected_sum
+        print(f"iteration: {iteration}")
+        print(f"connected_sum: {connected_sum}")
+        input()
