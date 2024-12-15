@@ -152,3 +152,10 @@ while True:
         print(f"iteration: {iteration}")
         print(f"connected_sum: {connected_sum}")
         input()
+
+# Ok this just happened to work but tbh that's because I got lucky, there's the
+# chance that the point I picked to follow with the flood fill could have been
+# not one of the right ones.
+# other approaches would have been to calculate the min entropy at each frame,
+# or to use the chinese remainder theorem because there are only going to be 103
+# * 101 distinct positions
