@@ -115,13 +115,20 @@ def print_instructions(index):
 
     print(pre, b(instructions[index]), post, sep="")
 
-def can_move(coords, direction):
+def attempt_move(coords, direction):
     row, col = coords[0] + direction[0], coords[1] + direction[1]
-    if warehouse[row][col] == DOT:
-        return True, (row, col)
     if warehouse[row][col] == WALL:
-        return False, (None, None)
-    return can_move((row, col), direction)
+        return False
+    if warehouse[row][col] == EMPTY:
+        warehouse[row][col] = warehouse[coords[0]][coords[1]]
+        warehouse[coords[0]][coords[1]] = EMPTY
+        return True
+    if warehouse[row][col] == BOX:
+        if attempt_move((row, col), direction):
+            warehouse[row][col] = warehouse[coords[0]][coords[1]]
+            warehouse[coords[0]][coords[1]] = EMPTY
+            return True
+        return False
 
 print_divider()
 print(f"Start: {id(start)}")
@@ -132,15 +139,9 @@ for index, i in enumerate(instructions):
     print_divider(DASH, HALF)
     direction = DIRS[i]
     print(f"Moving {i}")
-    is_able_to_move, dot_coords = can_move(coords, DIRS[i])
-    if is_able_to_move:
-        new_robot_coords = (coords[0] + DIRS[i][0], coords[1] + DIRS[i][1])
-        # Case: Robot is moving to an empty space
-        if dot_coords != new_robot_coords:
-            warehouse[dot_coords[0]][dot_coords[1]] = BOX
-        warehouse[coords[0]][coords[1]] = DOT
-        warehouse[new_robot_coords[0]][new_robot_coords[1]] = ROBOT
-        coords = new_robot_coords
+    #is_able_to_move, dot_coords = can_move(coords, DIRS[i])
+    if attempt_move(coords, DIRS[i]):
+        coords = (coords[0] + DIRS[i][0], coords[1] + DIRS[i][1])
     print_warehouse()
 
 gps_sum = 0
