@@ -30,8 +30,14 @@ def lead_zero(num, num_digits = 2):
     return f"{'0' * zeroes}{num}" if zeroes >= 0 else f"{num}"
 
 def rpad(text, length = 5):
+    text = str(text)
     spaces = length - len(text)
     return f"{text}{' ' * spaces if spaces > 0 else ''}"
+
+def lpad(text, length = 5):
+    text = str(text)
+    spaces = length - len(text)
+    return f"{' ' * spaces if spaces > 0 else ''}{text}"
 
 def id(num):
     return b(rpad(f"{num}:", 12))
@@ -47,9 +53,8 @@ if len(sys.argv) < 2:
     print("Please specify input file.")
     exit()
 
-if sys.argv[1] not in ["input", "input_test"]:
-    print("Invalid input file provided. Should be one of ", b("input "),
-              "or ", b("input_test"))
+if not sys.argv[1].startswith("input"):
+    print("Invalid input file provided.")
     exit()
 
 if len(sys.argv) > 2:
