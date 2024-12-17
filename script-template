@@ -39,8 +39,8 @@ def lpad(text, length = 5):
     spaces = length - len(text)
     return f"{' ' * spaces if spaces > 0 else ''}{text}"
 
-def id(num):
-    return b(rpad(f"{num}:", 12))
+def id(num, length = 12):
+    return b(rpad(f"{num}:", length))
 
 def print_divider(divider=EQUAL, length=FULL):
     print(divider*length)
