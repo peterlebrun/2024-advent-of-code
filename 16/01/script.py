@@ -115,7 +115,7 @@ def print_grid(grid, coords, neighbors, missing_vals=[]):
         print(f"{lpad(row_index, 3)}: {output}")
 
 def get_neighbors(grid, row, col, direction):
-    # This maps a direction change as though its a node
+    # This maps a direction change as though it is a node
     # So 13, 1, EAST -> (13, 2, EAST), (13, 1, NORTH)
     neighbors = []
     for ndirection, delta in DELTAS.items():
