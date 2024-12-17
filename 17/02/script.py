@@ -82,8 +82,6 @@ def get_inputs():
 def xor(a, b): return (a&~b)|(~a&b)
 
 def run(A, B, C, instructions):
-    print_divider(DOT, QUARTER + 12)
-    print(A)
     outputs = []
     ptr = 0
     while ptr < len(instructions) - 1:
@@ -154,39 +152,42 @@ def run(A, B, C, instructions):
             #print(f"{r(A)} // 2 ** {r(combo[operand])} = {g(C)}")
 
         ptr += 2
-    return outputs == instructions, outputs
+    return outputs
+
+instructions = [2,4,1,2,7,5,4,1,1,3,5,5,0,3,3,0][::-1]
+print(instructions)
+iteration = 0b0
+
+def calc(A):
+    B = A & 0b111
+    return xor(xor(xor(B, 0b10), A // 0b10 ** xor(B, 0b10)), 0b11) & 0b111
+
+A = 0b1
+ptr = 0
+reset = None
+counter = 0b0
+tmp_outputs = []
+while ptr < len(instructions):
+    print(A, bin(A), ptr, instructions[ptr], counter, reset, [calc(A >> (p * 3)) for p in range(ptr)])
+    if calc(A) == instructions[ptr]:
+        if ptr == len(instructions) - 1:
+            break
+        ptr += 1
+        reset = A
+        counter = 0b0
+        A = A << 3
+    else:
+        if reset is not None:
+            if counter == 0b111:
+                A = reset
+                ptr -= 1
+                reset = None
+                counter = 0b0
+            else:
+                counter += 0b1
+        A += 0b1
+print(A)
 
 print_divider()
-A, B, C, instructions = get_inputs()
-
-#counter = 0
-#while True:
-    #has_match, outputs = run(counter, B, C, instructions)
-    #if has_match:
-        #print(f"Found match! {counter}, {outputs}")
-        #break
-    #counter += 1
-
-def run_bin(iteration):
-    outputs = []
-    A = iteration
-    for instruction in [2,4,1,2,7,5,4,1,1,3,5,5,0,3,3,0]:
-#    while len(outputs) < 9:
-        outputs.append(xor(xor(xor(A & 0b111, 0b10), A // 2 ** xor(A & 0b111, 0b10)), 0b11) & 0b111)
-        if outputs[-1] != instruction:
-            return False, outputs
-        A = A >> 3
-    return True, outputs
-
-#print(run_bin(27575648))
-#loop = 0
-#2 = xor(xor(xor((A >> 3**loop) & 0b111, 0b10), (A >> 3**loop) // 2 ** xor((A >> 3**loop) & 0b111, 0b10)), 0b11) & 0b111
-#
-iteration = 0b0
-while True:
-    print(iteration)
-    has_match, outputs = run_bin(iteration)
-    if has_match:
-        print(f"Matches: {outputs}")
-        break
-    iteration += 0b1
+_, _, _, instructions = get_inputs()
+run(A, 0, 0, instructions)
