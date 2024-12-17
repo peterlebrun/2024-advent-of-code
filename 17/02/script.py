@@ -126,9 +126,6 @@ def run(A, B, C, instructions):
     return outputs
 
 instructions = [2,4,1,2,7,5,4,1,1,3,5,5,0,3,3,0][::-1]
-print(instructions)
-iteration = 0b0
-
 def calc(A):
     B = A & 0b111
     return xor(xor(xor(B, 0b10), A // 0b10 ** xor(B, 0b10)), 0b11) & 0b111
