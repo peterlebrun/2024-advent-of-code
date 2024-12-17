@@ -97,6 +97,7 @@ def print_grid(grid, coords, neighbors, missing_vals=[]):
             middle += f"{i[1]}"
             bottom += f"{i[2]}"
     print(top)
+    print(middle)
     print(bottom)
     for row_index, row in enumerate(grid):
         output = ""
