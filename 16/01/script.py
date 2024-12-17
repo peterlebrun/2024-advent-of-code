@@ -75,12 +75,6 @@ DELTAS = {
     SOUTH: [1, 0],
     WEST: [0, -1],
 }
-OPPOSITE = {
-    NORTH: SOUTH,
-    EAST: WEST,
-    SOUTH: NORTH,
-    WEST: EAST,
-}
 
 def print_grid(grid, coords, neighbors, missing_vals=[]):
     top = " " * 5
@@ -120,6 +114,8 @@ def print_grid(grid, coords, neighbors, missing_vals=[]):
         print(f"{lpad(row_index, 3)}: {output}")
 
 def get_neighbors(grid, row, col, direction):
+    # This maps a direction change as though its a node
+    # So 13, 1, EAST -> (13, 2, EAST), (13, 1, NORTH)
     neighbors = []
     for ndirection, delta in DELTAS.items():
         next_row, next_col = row + delta[0], col + delta[1]
@@ -177,9 +173,6 @@ while len(unvisited_nodes):
         if tmp < dist[neighbor]:
             dist[neighbor] = tmp
             prev[neighbor] = node
-
-for row in grid:
-    print(row)
 
 for e in end_nodes:
     print(f"{e}: {dist[e]}")
