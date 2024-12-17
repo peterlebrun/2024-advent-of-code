@@ -88,47 +88,26 @@ def run(A, B, C, instructions):
         opcode, operand = instructions[ptr:ptr+2]
         combo = [0, 1, 2, 3, A, B, C]
 
-        #print_divider(DOT, 10)
-        #print(f"{ptr} {id(opcode, 2)} {g(operand)}")
-        #print_divider(DOT, QUARTER)
-        # 0: A // 2 ** Combo Operand -> A
         if opcode == 0:
             tmp = A
             A = A // (2 ** combo[operand])
-            #print(f"A // 2 ** Combo Operand -> A")
-            #print(f"{r(tmp)} // 2 ** {r(combo[operand])} = {g(A)}")
 
-        # 1: Bitwise XOR B|literal operand -> B
         if opcode == 1:
-            #print(f"B^literal_operand -> B")
             tmp = xor(B, operand)
-            #print(f"({r(B)}^{r(operand)} = {g(tmp)}")
             B = tmp
 
-        # 2: Combo operand % 8 -> B
         if opcode == 2:
             B = combo[operand] % 8
-            #print(f"Combo operand % 8 -> B")
-            #print(f"{r(combo[operand])} % 8 = {g(B)}")
 
-        # 3: Nothing if A == 0, Otherwise jump instructions (do not increment pointer)
         if opcode == 3:
-            #print(f"Do nothing if A is zero. Otherwise set ptr to operand.")
             if A != 0:
                 ptr = operand
-                #print(f"Setting ptr to {operand}.")
                 continue
-            #else:
-                #print(f"A is 0. Doing nothing.")
 
-        # 4: Bitwise XOR B|C -> B (ignore operand)
         if opcode == 4:
-            #print(f"B^C -> B")
             tmp = xor(B, C)
-            #print(f"({r(B)}^{r(C)} = {g(tmp)}")
             B = tmp
 
-        # 5: Output Combo operand % 8
         if opcode == 5:
             outputs.append(combo[operand] % 8)
             print(outputs)
@@ -136,20 +115,12 @@ def run(A, B, C, instructions):
                 if outputs[i] != instructions[i]:
                     print(f"No match: {outputs}")
                     return False, outputs
-            #print(f"Output combo[operand] % 8")
-            #print(f"{r(combo[operand])} % 8 = {outputs[-1]}")
 
-        # 6: A // 2 ** Combo Operand -> B
         if opcode == 6:
             B = A // (2 ** combo[operand])
-            #print(f"A // 2 ** Combo Operand -> B")
-            #print(f"{r(A)} // 2 ** {r(combo[operand])} = {g(B)}")
 
-        # 7: A // 2 ** Combo Operand -> C
         if opcode == 7:
             C = A // (2 ** combo[operand])
-            #print(f"A // 2 ** Combo Operand -> C")
-            #print(f"{r(A)} // 2 ** {r(combo[operand])} = {g(C)}")
 
         ptr += 2
     return outputs
@@ -168,7 +139,6 @@ reset = None
 counter = 0b0
 tmp_outputs = []
 while ptr < len(instructions):
-    print(A, bin(A), ptr, instructions[ptr], counter, reset, [calc(A >> (p * 3)) for p in range(ptr)])
     if calc(A) == instructions[ptr]:
         if ptr == len(instructions) - 1:
             break
