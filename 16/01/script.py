@@ -128,81 +128,106 @@ def print_grid(grid, coords, neighbors, missing_vals=[]):
                 output += f"\033[32;1m{col}\033[0m"
         print(f"{lpad(row_index, 3)}: {output}")
 
+# this is currently implemented as DFS, needs to be BFS
+def enqueue(
+    queue,
+    row,
+    col,
+    parent_coords,
+    prev_direction = EAST,
+    path_score = 0,
+):
+    queue.append((
+        row,
+        col,
+        parent_coords,
+        prev_direction,
+        path_score,
+    ))
+
 def traverse(
     grid = [[]],
     row = 0,
     col = 0,
-    parent_coords = (0, 0),
+    parent_coords = (0, 0, EAST),
     prev_direction = EAST,
-    path_score = 0,
-    vertices={},
-    nodes=set(),
+    vertices = {}
 ):
-    if (row, col, prev_direction) in nodes:
-        return
+    visited_nodes = set()
+    unvisited_nodes = []
+    enqueue(unvisited_nodes, row, col, parent_coords)
+    while len(unvisited_nodes):
+        #print(f"Len Unvisited Nodes: {len(unvisited_nodes)}")
+        node = unvisited_nodes.pop(0)
+        row, col, parent_coords, prev_direction, path_score = node
+        print(f"Node: {node}")
 
-    if grid[row][col] == END:
-        vertices[parent_coords][END] = path_score
-        return
-
-    neighbors = []
-    for direction, delta in DELTAS.items():
-        next_row, next_col = row + delta[0], col + delta[1]
-
-        # Don't allow direction reversal
-        if direction == OPPOSITE[prev_direction]:
+        if grid[row][col] == END:
+            vertices[parent_coords][END] = path_score
             continue
 
-        if grid[next_row][next_col] == WALL:
+        neighbors = []
+        for direction, delta in DELTAS.items():
+            next_row, next_col = row + delta[0], col + delta[1]
+
+            # Don't allow direction reversal
+            if direction == OPPOSITE[prev_direction]:
+                continue
+
+            if grid[next_row][next_col] == WALL:
+                continue
+
+            neighbors.append(((next_row, next_col), direction))
+
+        if not len(neighbors):
             continue
 
-        neighbors.append(((next_row, next_col), direction))
+        if len(neighbors) == 1:
+            ((next_row, next_col), direction) = neighbors[0]
+            if direction != prev_direction:
+                vertices[parent_coords][(row, col, prev_direction)] = path_score
+                vertices[(row, col, prev_direction)][(row, col, direction)] = 1000
+                parent_coords = (row, col, direction)
+                path_score = 0
 
-    if (row, col) == (135, 5):
-        print(f"{(row, col)}: {neighbors}")
-        input()
-
-    if (row, col) == (119, 3):
-        print(f"{(row, col)}: {neighbors}")
-        input()
-
-    if not len(neighbors):
-        return
-
-    if len(neighbors) == 1:
-        ((next_row, next_col), direction) = neighbors[0]
-
-        traverse(
-            grid=grid,
-            row=next_row,
-            col=next_col,
-            parent_coords=parent_coords,
-            prev_direction=direction,
-            path_score=path_score + 1 + (0 if direction == prev_direction else 1000),
-            vertices=vertices,
-            nodes=nodes,
-        )
-    else:
-        nodes.add((row, col, prev_direction))
-        for n in neighbors:
-            if (row, col) not in vertices:
-                vertices[(row, col)] = {}
-            if (row, col) in vertices[parent_coords]:
-                vertices[parent_coords][(row, col)] = min(path_score, vertices[parent_coords][(row, col)])
-            else:
-                vertices[parent_coords][(row, col)] = path_score
-
-            ((next_row, next_col), direction) = n
-            traverse(
-                grid=grid,
-                row=next_row,
-                col=next_col,
-                parent_coords=(row, col),
-                prev_direction=direction,
-                path_score=1 + (0 if direction == prev_direction else 1000),
-                vertices=vertices,
-                nodes=nodes,
+            enqueue(
+                unvisited_nodes,
+                next_row,
+                next_col,
+                parent_coords,
+                direction,
+                path_score + 1
             )
+        else:
+            if (row, col, prev_direction) not in vertices:
+                vertices[(row, col, prev_direction)] = {}
+
+            if (row, col, prev_direction) in vertices[parent_coords]:
+                vertices[parent_coords][(row, col, prev_direction)] = min(
+                    path_score,
+                    vertices[parent_coords][(row, col, prev_direction)],
+                )
+            else:
+                vertices[parent_coords][(row, col, prev_direction)] = path_score
+
+            if (row, col) in visited_nodes:
+                continue
+            visited_nodes.add((row, col))
+
+            for n in neighbors:
+                ((next_row, next_col), direction) = n
+
+                if direction != prev_direction:
+                    vertices[(row, col, prev_direction)][(row, col, direction)] = 1000
+
+                enqueue(
+                    unvisited_nodes,
+                    next_row,
+                    next_col,
+                    (row, col, direction),
+                    direction,
+                    1
+                )
 
 def do_dijkstra_sort_of(vertices, start_coords, missing_vals):
     dist = {}
@@ -214,30 +239,24 @@ def do_dijkstra_sort_of(vertices, start_coords, missing_vals):
         unvisited.append(v)
     dist[start_coords] = 0
     dist[END] = float('inf')
+    prev[END] = None
 
     while len(unvisited):
-        #print(f"Unvisited Before Sort: {unvisited}")
         unvisited.sort(key=lambda u: dist[u])
         node = unvisited[0]
         unvisited.remove(node)
 
-        print(f"Node: {node}")
-        print(f"Vertices: {vertices[node]}")
-        print(f"Dist Node: {dist[node]}")
-        #print(f"Unvisited After Sort: {unvisited}")
-        #print(f"Dist Before: {dist}")
         for neighbor, weight in vertices[node].items():
-            print(f"neighbor: {neighbor}")
-            print(dist[neighbor])
+            if neighbor not in dist:
+                dist[neighbor] = float('inf')
+            if neighbor not in prev:
+                prev[neighbor] = None
             tmp_weight = dist[node] + weight
 
             if tmp_weight < dist[neighbor]:
                 dist[neighbor] = tmp_weight
                 prev[neighbor] = node
-            print(f"Dist Neighbor: {dist[neighbor]}")
-            print(f"prev neighbor: {prev[neighbor]}")
-    print(f"Dist After: {dist}")
-    return dist[END], prev
+    return dist[END]
 
 min_path_weight = 999999999999999999999
 def compute_paths(vertices, coords, path_weight, path, paths):
@@ -273,29 +292,25 @@ print(f"Starting Coords: {start_coords}")
 print_divider(DOT, QUARTER)
 
 vertices = defaultdict(dict)
-nodes = set()
+
 traverse(
-    grid=grid,
-    row=start_coords[0],
-    col=start_coords[1],
-    parent_coords=start_coords,
-    prev_direction=EAST,
-    path_score=0,
-    vertices=vertices,
-    nodes=nodes,
+    grid,
+    start_coords[0],
+    start_coords[1],
+    (*start_coords, EAST),
+    EAST,
+    vertices,
 )
 
 print_grid(grid, start_coords, vertices.keys())
 print_divider(DOT, HALF)
-for n in nodes:
-    print(n)
-
-#for k, v in vertices.items():
-    #print(f"{k}: {v}")
 
 print_divider(DOT, HALF)
 
 missing_vals = []
-print(f"Minimum Path Score: {do_dijkstra_sort_of(vertices, start_coords, missing_vals)}")
+print_grid(grid, start_coords, vertices.keys())
 
-#print_grid(grid, start_coords, vertices.keys(), missing_vals)
+for k, v in vertices.items():
+    print(f"{k}: {v}")
+
+print(f"Minimum Path Score: {do_dijkstra_sort_of(vertices, (*start_coords, EAST), missing_vals)}")
