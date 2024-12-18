@@ -110,11 +110,6 @@ def run(A, B, C, instructions):
 
         if opcode == 5:
             outputs.append(combo[operand] % 8)
-            print(outputs)
-            for i in range(len(outputs)):
-                if outputs[i] != instructions[i]:
-                    print(f"No match: {outputs}")
-                    return False, outputs
 
         if opcode == 6:
             B = A // (2 ** combo[operand])
@@ -127,8 +122,8 @@ def run(A, B, C, instructions):
 
 instructions = [2,4,1,2,7,5,4,1,1,3,5,5,0,3,3,0][::-1]
 def calc(A):
-    B = A & 0b111
-    return xor(xor(xor(B, 0b10), A // 0b10 ** xor(B, 0b10)), 0b11) & 0b111
+    B = (A & 0b111)^0b10
+    return 0b111 & (0b11^(B^(A // 0b10 ** B)))
 
 A = 0b1
 ptr = 0
@@ -157,4 +152,4 @@ print(A)
 
 print_divider()
 _, _, _, instructions = get_inputs()
-run(A, 0, 0, instructions)
+print(run(A, 0, 0, instructions))
