@@ -11,6 +11,7 @@ STAR = "*"
 HASH = "#"
 DASH = "-"
 EQUAL = "="
+WALL = "#"
 FULL = 80
 HALF = 40
 QUARTER = 20
@@ -99,8 +100,82 @@ if len(sys.argv) > 2:
     print("Unrecognized arguments provided.")
     exit()
 
-def get_inputs():
-    with open(sys.argv[1], "r") as f:
-        return [[c for c in r.strip()] for r in f.readlines()]
+R = 71
+C = 71
+grid = []
+for i in range(R):
+    grid.append(["."] * C)
 
-print(get_inputs())
+def get_neighbors(grid, row, col):
+    neighbors = []
+    for delta in [[1,0],[0,1],[-1,0],[0,-1]]:
+        next_row, next_col = row + delta[0], col + delta[1]
+        if next_row not in range(R) or next_col not in range(C):
+            continue
+        if grid[next_row][next_col] == WALL:
+            continue
+        neighbors.append((next_row, next_col))
+    return neighbors
+
+def find_shortest_path(grid, start, end):
+    dist = {}
+    prev = {}
+    unvisited_nodes = [start]
+    visited_nodes = set()
+    dist[start] = 0
+    end_nodes = set()
+    while len(unvisited_nodes):
+        unvisited_nodes.sort(key=lambda u: dist[u])
+        node = unvisited_nodes.pop(0)
+        visited_nodes.add(node)
+
+        for neighbor in get_neighbors(grid, *node):
+            if neighbor in visited_nodes:
+                continue
+            if (neighbor[0], neighbor[1]) == end:
+                end_nodes.add(neighbor)
+            elif neighbor not in unvisited_nodes:
+                unvisited_nodes.append(neighbor)
+            if neighbor not in dist:
+                dist[neighbor] = float('inf')
+            if neighbor not in prev:
+                prev[neighbor] = None
+
+            tmp = dist[node] + 1
+
+            if tmp < dist[neighbor]:
+                dist[neighbor] = tmp
+                prev[neighbor] = node
+
+    if not len(end_nodes):
+        print("Could not reach end")
+        return float('inf'), []
+
+    # This seems like an awful lot of work
+    end_nodes = [node for node in end_nodes] # Bad pattern - overwriting set w/ list so we can sort it
+    end_nodes.sort(key=lambda u: dist[u])
+    e = end_nodes[0]
+    min_distance = dist[e]
+
+    current_node = e
+    shortest_path = [current_node]
+    while current_node != start:
+        current_node = prev[current_node]
+        shortest_path.append(current_node)
+
+    return min_distance, shortest_path[::-1]
+
+with open(sys.argv[1], "r") as f:
+    walls = [tuple(map(int, r.strip().split(",")[::-1])) for r in f.readlines()]
+
+for index, (row, col) in enumerate(walls):
+    if index == 1024:
+        break
+    grid[row][col] = WALL
+print_grid(grid)
+
+START = (0, 0)
+END = (R-1, C-1)
+distance, path = find_shortest_path(grid, START, END)
+print_grid(grid, (), path)
+print(f"Distance: {distance}")

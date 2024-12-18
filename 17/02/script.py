@@ -79,8 +79,6 @@ def get_inputs():
                 instructions = list(map(int, row[9:].split(',')))
         return A, B, C, instructions
 
-def xor(a, b): return (a&~b)|(~a&b)
-
 def run(A, B, C, instructions):
     outputs = []
     ptr = 0
@@ -93,7 +91,7 @@ def run(A, B, C, instructions):
             A = A // (2 ** combo[operand])
 
         if opcode == 1:
-            tmp = xor(B, operand)
+            tmp = B^operand
             B = tmp
 
         if opcode == 2:
@@ -105,7 +103,7 @@ def run(A, B, C, instructions):
                 continue
 
         if opcode == 4:
-            tmp = xor(B, C)
+            tmp = B^C
             B = tmp
 
         if opcode == 5:
@@ -122,8 +120,8 @@ def run(A, B, C, instructions):
 
 instructions = [2,4,1,2,7,5,4,1,1,3,5,5,0,3,3,0][::-1]
 def calc(A):
-    B = (A & 0b111)^0b10
-    return 0b111 & (0b11^(B^(A // 0b10 ** B)))
+    B = (A&0b111)^0b10
+    return 0b111&(0b11^(B^(A>>B)))
 
 A = 0b1
 ptr = 0
