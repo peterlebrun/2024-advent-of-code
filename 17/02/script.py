@@ -118,7 +118,8 @@ def run(A, B, C, instructions):
         ptr += 2
     return outputs
 
-instructions = [2,4,1,2,7,5,4,1,1,3,5,5,0,3,3,0][::-1]
+_, _, _, instructions = get_inputs()
+rev_instructions = instructions[::-1]
 def calc(A):
     B = (A&0b111)^0b10
     return 0b111&(0b11^(B^(A>>B)))
@@ -128,9 +129,9 @@ ptr = 0
 reset = None
 counter = 0b0
 tmp_outputs = []
-while ptr < len(instructions):
-    if calc(A) == instructions[ptr]:
-        if ptr == len(instructions) - 1:
+while ptr < len(rev_instructions):
+    if calc(A) == rev_instructions[ptr]:
+        if ptr == len(rev_instructions) - 1:
             break
         ptr += 1
         reset = A
@@ -149,5 +150,4 @@ while ptr < len(instructions):
 print(A)
 
 print_divider()
-_, _, _, instructions = get_inputs()
 print(run(A, 0, 0, instructions))
