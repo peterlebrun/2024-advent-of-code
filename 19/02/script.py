@@ -126,11 +126,28 @@ def print_node(node, depth=0):
         print(f"{pad}{key}")
         print_node(node[key], depth+1)
 
-def get_possibilities(row, trie, accum, possibility=[]):
-    print(accum)
-    input()
-    #print(f"Evaluating input string {row}")
+def is_possible(row, trie):
+    if not(row): return True
 
+    node = trie
+    while len(node):
+        outer_loop_should_break = True
+        for key in node:
+            if row.startswith(key):
+                if is_possible(row[len(key):], trie):
+                    return True
+                node = node[key]
+                outer_loop_should_break = False
+                break
+
+        if outer_loop_should_break:
+            break
+
+    return False
+
+accum = []
+def get_possibilities(row, trie, possibility=[]):
+    global accum
     node = trie
     outer_loop_should_break = False
     while not outer_loop_should_break:
@@ -141,36 +158,40 @@ def get_possibilities(row, trie, accum, possibility=[]):
                 break
 
             if row.startswith(key):
-                get_possibilities(row[len(key):], trie, accum, [*possibility, key])
+                get_possibilities(row[len(key):], trie, [*possibility, key])
                 node = node[key]
                 possibility = possibility.copy()
                 outer_loop_should_break = False
                 break
 
-    return accum
-
 trie = {}
-num_possible = 0
+atoms = []
+molecules = {}
 with open(sys.argv[1], "r") as f:
     for index, row in enumerate(f.readlines()):
         row = row.strip()
         if index == 0:
-            strings = row.split(', ')
-            strings.sort(key=lambda x: -len(x))
-            print(strings)
-            input()
-            for s in strings:
-                generate_reverse_trie(s, trie)
+            atoms = row.split(', ')
+            atoms.sort(key=len)
+            for a in atoms:
+                insert(a, trie)
             print_node(trie)
 
         if index >= 2:
-            print_divider(DASH, QUARTER + 10)
             print(f"Evaluating row {index}: {row}")
-            accum = []
-            possibilities = get_possibilities(row, trie, accum)
-            print(f"{len(possibilities)} possibilities")
-            num_possible += len(possibilities)
-            input()
+            if is_possible(row, trie):
+                molecules[row] = []
 
-print_divider(DOT, QUARTER)
-print(f"Num Possible: {num_possible}")
+print(molecules)
+
+for m in molecules:
+    for a in atoms:
+        if m.find(a) != -1 and m != a:
+            molecules[m].append(a)
+
+for parent, children in molecules.items():
+    print_divider(DOT, HALF)
+    print(id(parent))
+    children.sort(key=len, reverse=True)
+    for atom in children:
+        print(atom)
