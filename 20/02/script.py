@@ -45,7 +45,7 @@ def id(num, length = 12):
 def print_divider(divider=EQUAL, length=FULL):
     print(divider*length)
 
-def print_grid(grid, coords=(None, None), neighbors=set(), missing_vals=[]):
+def print_grid(grid, terminal_coords=set(), neighbors=set(), missing_vals=set()):
     top = " " * 5
     middle = " " * 5
     bottom = " " * 5
@@ -71,7 +71,7 @@ def print_grid(grid, coords=(None, None), neighbors=set(), missing_vals=[]):
     for row_index, row in enumerate(grid):
         output = ""
         for col_index, col in enumerate(row):
-            if (row_index, col_index) == coords:
+            if (row_index, col_index) in terminal_coords:
                 output += f"{g(col)}"
             elif (row_index, col_index) in neighbors:
                 output += b("0")
@@ -113,20 +113,8 @@ def get_grid_neighbors(grid, row, col):
 def get_node_between(a, b):
     return ((a[0] + b[0])//2, (a[1]+b[1])//2)
 
-def get_jumps(path, row, col, jump_size):
-    jumps = []
-    for delta in [
-        [jump_size,0],
-        [0,jump_size],
-        [-1 * jump_size,0],
-        [0,-1 * jump_size],
-    ]:
-        coords = (row + delta[0], col + delta[1])
-        if coords in path:
-            btw = get_node_between((row, col), coords)
-            if grid[btw[0]][btw[1]] == WALL:
-                jumps.append([(row, col), coords])
-    return jumps
+def get_manhattan_distance(a, b):
+    return abs(a[0] - b[0]) + abs(a[1]-b[1])
 
 WALL = "#"
 EMPTY = "."
@@ -149,6 +137,71 @@ with open(sys.argv[1], "r") as f:
 
 R = len(grid)
 C = len(grid[0])
+
+def get_jumps(source, dist, jumps):
+    #print_divider(DASH, QUARTER+10)
+    nodes_evaluated = 0
+    for i in range(21):
+        #print(f"i: {i}")
+        for j in range(21):
+            #print_divider(DASH, QUARTER)
+            #print(f"i,j: {(i,j)}, {i+j}")
+            if i+j == 0:
+                #print(f"i+j too low")
+                continue
+
+            if i+j > 20:
+                #print(f"i+j too high")
+                break
+
+            if i == 0:
+                deltas = [
+                    [0,      j],
+                    [0, -1 * j],
+                ]
+            elif j == 0:
+                deltas = [
+                    [     i, 0],
+                    [-1 * i, 0],
+                ]
+            else:
+                deltas = [
+                    [     i,      j],
+                    [     i, -1 * j],
+                    [-1 * i,      j],
+                    [-1 * i, -1 * j],
+                ]
+
+            for delta in deltas:
+                nodes_evaluated += 1
+                dest = (source[0] + delta[0], source[1] + delta[1])
+                #print(f"Evaluating {dest} from delta {delta} with manhattan distance {get_manhattan_distance(source, dest)} from {source}")
+                if dest not in dist:
+                    #print(f"{dest} not on path")
+                    continue
+
+                if source == dest:
+                    #print(f"source = dest {dest}")
+                    continue
+
+                jump = [source, dest]
+                jump.sort(key=lambda x: dist[x])
+                jump = tuple(jump)
+
+                if jump in jumps:
+                    #print(f"{jump} already seen")
+                    continue
+
+                savings = dist[jump[1]] - dist[jump[0]] - (i + j)
+                if savings <= 0:
+                    #print(f"{jump} has no savings: {savings}")
+                    continue
+
+                #print(f"Adding {jump} with savings {savings}")
+                jumps[jump] = savings
+            #print_divider(DOT, QUARTER + 5)
+
+    #print(f"Nodes Evaluated: {nodes_evaluated}")
 
 def find_shortest_path(grid, start=start_coords, end=end_coords):
     dist = {}
@@ -199,23 +252,17 @@ distance, path, dist, prev = find_shortest_path(grid)
 print_divider(DASH, HALF)
 print(f"Distance: {distance}")
 
-jumps_to_eval = set()
+jumps = {}
+counter = 0
 for node in path:
-    print(f"Calculate jumps for {node}")
-    for jump in get_jumps(path, node[0], node[1], 2):
-        # Ensure always arranged from earlier node to later
-        jump.sort(key=path.index)
-
-        if tuple(jump) in jumps_to_eval:
-            continue
-
-        jumps_to_eval.add(tuple(jump))
+    counter += 1
+    print(f"{lpad(counter, 5)} out of {len(path)}")
+    get_jumps(node, dist, jumps)
 
 jump_sizes = defaultdict(int)
-for pre, post in jumps_to_eval:
-    path_dist = dist[post] - dist[pre] - 2 # Subtract two for initial jump cost
-    print(f"Jump from {pre} to {post} saves {path_dist}")
-    jump_sizes[path_dist] += 1
+for jump, savings in jumps.items():
+    if savings > 0:
+        jump_sizes[savings] += 1
 
 ge_100 = 0
 tmp = list(jump_sizes.keys())
