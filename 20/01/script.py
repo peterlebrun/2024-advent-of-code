@@ -113,8 +113,23 @@ def get_grid_neighbors(grid, row, col):
 def get_node_between(a, b):
     return ((a[0] + b[0])//2, (a[1]+b[1])//2)
 
-def get_jumps(path, row, col, jump_size):
-    jumps = []
+def get_path_distance(path_prev, post, pre):
+    """
+    path_prev maps from node n to node n-1.
+    Count number of jumps from post to pre.
+    """
+    counter = 0
+    node = post
+    while node != pre or node in path_prev:
+        node = path_prev[node]
+        counter += 1
+
+    print(f"Eval path distance from {post} to {pre}: {counter}")
+
+    return counter
+
+def get_jumps(path, row, col, jump_size, path_prev):
+    jumps = {}
     for delta in [
         [jump_size,0],
         [0,jump_size],
@@ -125,8 +140,7 @@ def get_jumps(path, row, col, jump_size):
         if coords in path:
             btw = get_node_between((row, col), coords)
             if grid[btw[0]][btw[1]] == WALL:
-                jumps.append(btw)
-
+                jumps[coords] = get_path_distance(path_prev, coords, (row, col)) - 2 # subtract two for initial jump
     return jumps
 
 WALL = "#"
@@ -193,28 +207,26 @@ def find_shortest_path(grid, start=start_coords, end=end_coords):
         current_node = prev[current_node]
         shortest_path.append(current_node)
 
-    return min_distance, shortest_path[::-1]
+    return min_distance, shortest_path[::-1], prev
 
-distance, path = find_shortest_path(grid, start_coords, end_coords)
-#print_grid(grid, (), path)
-print(f"Distance: {distance}")
+distance, path, prev = find_shortest_path(grid)
 
-visited_jumps = set()
-jumps = set()
-for node in path:
-    tmp = get_jumps(path, node[0], node[1], 2)
-    for t in tmp:
-        jumps.add(t)
+for k, v in prev.items():
+    print(f"{k}: {v}")
 
 jump_sizes = defaultdict(int)
-counter = 0
-for j_row, j_col in jumps:
-    counter += 1
-    print(f"{lpad(counter, 4)} of {len(jumps)}")
-    grid[j_row][j_col] = EMPTY
-    j_dist, _ = find_shortest_path(grid)
-    grid[j_row][j_col] = WALL
-    jump_sizes[distance - j_dist] += 1
+for node in path:
+    for _, size in get_jumps(path, node[0], node[1], 2, prev).items():
+        jump_sizes[size] += 1
+
+#counter = 0
+#for j_row, j_col in jumps:
+    #counter += 1
+    #print(f"{lpad(counter, 4)} of {len(jumps)}")
+    #grid[j_row][j_col] = EMPTY
+    #j_dist, _ = find_shortest_path(grid)
+    #grid[j_row][j_col] = WALL
+    #jump_sizes[distance - j_dist] += 1
 
 ge_100 = 0
 tmp = list(jump_sizes.keys())
