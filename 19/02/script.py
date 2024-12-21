@@ -145,25 +145,37 @@ def is_possible(row, trie):
 
     return False
 
-accum = []
-def get_possibilities(row, trie, possibility=[]):
-    global accum
+def get_possibility(row, trie, possibility=[], depth=0, original_row=""):
+    #print_divider(DASH, 5)
+    if not original_row:
+        original_row = row
+    #print_divider(DASH, HALF)
+    #print(f"row: {row}")
+    #print(f"original_row: {original_row}")
+    #print(f"possibility: {possibility}")
+    #print(f"depth: {depth}")
     node = trie
-    outer_loop_should_break = False
-    while not outer_loop_should_break:
-        outer_loop_should_break = True
+    while len(node):
+        #print(f"node: {node}")
         for key in node:
+            #print(f"key: {key}")
             if row == key:
-                accum.append([*possibility, key])
-                break
+                #print(f"row = key {row}")
+                if not depth: # this makes sure we don't return the string itself as a possibility
+                    return []
+                return [*possibility, key]
 
             if row.startswith(key):
-                get_possibilities(row[len(key):], trie, [*possibility, key])
-                node = node[key]
-                possibility = possibility.copy()
-                outer_loop_should_break = False
-                break
+                #print(f"row starts with {key}")
+                if not any([row.startswith(k) for k in node[key]]):
+                    #print(f"no longer key available")
+                    return get_possibility(row[len(key):], trie, [*possibility, key], depth+1, original_row)
+                else:
+                    #print(f"traversing node instead")
+                    node = node[key]
+                    break
 
+print_divider()
 trie = {}
 atoms = []
 molecules = {}
@@ -176,22 +188,44 @@ with open(sys.argv[1], "r") as f:
             for a in atoms:
                 insert(a, trie)
             print_node(trie)
+            print_divider()
 
         if index >= 2:
             print(f"Evaluating row {index}: {row}")
             if is_possible(row, trie):
                 molecules[row] = []
 
-print(molecules)
+#for parent, children in molecules.items():
+    #print_divider(DOT, HALF)
+    #print(id(parent))
+    #children.sort(key=len, reverse=True)
+    #for atom in children:
+        #print(atom)
 
+#atom_store = {}
+#for a in atoms:
+#    print_divider()
+#    possibility = get_possibility(a, trie, atom_store, [])
+#    print(f"{a}: { possibility if len(possibility) else None }")
+#    atom_store[a] = possibility
+
+for_later = []
+counter = 1
 for m in molecules:
-    for a in atoms:
-        if m.find(a) != -1 and m != a:
-            molecules[m].append(a)
-
-for parent, children in molecules.items():
-    print_divider(DOT, HALF)
-    print(id(parent))
-    children.sort(key=len, reverse=True)
-    for atom in children:
-        print(atom)
+    if m in [
+        "wwurggwbgwrrrbururuwggguwruwwrwbgubgwbrwbb",
+        "rrbwwuguwgrrgrubggwrrgwbwbrubgruwgrrbwbrbbrguuwrgbwrwurwrb",
+        "wwgwurwuwbgguubbbgurwburgubgbwwubwrbugubwgwggwwgrwwu",
+        "rgrgugbuugbwrwbwwbururuwwgubbgburuwrrwrrwbb",
+        "wguuuwgwwgbggbgubwbuwrbrrurubrgrrburruwbrgrwubgbuuburbw",
+        "urgguubbrgguugbrrwrrbrwwuwwuwgurwuwbbwwbwwbrrurbburbrb",
+        "wbubwuurugruwruuwbbbgbgwrbuwugbugrrgrburbbubbbubbrug",
+    ]:
+        for_later.append(m)
+        continue
+    print_divider(DASH, HALF)
+    print(f"{counter} of {len(molecules)}")
+    print(f"{m}")
+    print(f"{get_possibility(m, trie)}")
+    counter += 1
+    input()
