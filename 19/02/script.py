@@ -145,7 +145,23 @@ def is_possible(row, trie):
 
     return False
 
-def get_atomic_match(haystack, needles, index, exclude=[]):
+def get_all_matches(haystack, needles, index, include_self = False):
+    """
+    Return all needles that haystack startswith at index.
+    """
+
+    matches = []
+    for n in needles:
+        if haystack.startswith(n, index):
+            if haystack == n and not include_self:
+                continue
+            matches.append(n)
+    return matches
+
+def get_longest_match(haystack, needles, index, exclude=[]):
+    """
+    Return longest atom that haystack startswith at index.
+    """
     for n in needles:
         if n in exclude:
             continue
@@ -165,7 +181,7 @@ def get_possibility(molecule, atoms):
         #print(i)
         #print(possibility)
         #print(exclude)
-        tmp = get_atomic_match(molecule, atoms, i, exclude)
+        tmp = get_longest_match(molecule, atoms, i, exclude)
         if len(tmp):
             possibility.append(tmp)
             i += len(possibility[-1])
@@ -176,138 +192,47 @@ def get_possibility(molecule, atoms):
 
     return possibility
 
-# Only gets a single possibility
-def get_possibility_old(row, trie, possibility=[], depth=0, original_row=""):
-    #print_divider(DASH, 5)
-    if not original_row:
-        original_row = row
-    #print_divider(DASH, HALF)
-    #print(f"row: {row}")
-    #print(f"original_row: {original_row}")
-    #print(f"possibility: {possibility}")
-    #print(f"depth: {depth}")
-    node = trie
-    while len(node):
-        #print(f"node: {node}")
-        for key in node:
-            #print(f"key: {key}")
-            if row == key:
-                #print(f"row = key {row}")
-                if not depth: # this makes sure we don't return the string itself as a possibility
-                    return []
-                return [*possibility, key]
+memos = {}
+def get_all_possibilities(row, trie, accum=0):
+    if row in memos:
+        print(f"Getting {row} from memos")
+        return memos[row]
 
-            if row.startswith(key):
-                #print(f"row starts with {key}")
-                if not any([row.startswith(k) for k in node[key]]):
-                    #print(f"no longer key available")
-                    return get_possibility(row[len(key):], trie, [*possibility, key], depth+1, original_row)
-                else:
-                    #print(f"traversing node instead")
-                    node = node[key]
-                    break
-
-def get_possibilities(row, trie, accum=[], possibility=[]):
     node = trie
     outer_loop_should_break = False
     while not outer_loop_should_break:
         outer_loop_should_break = True
         for key in node:
             if row == key:
-                accum.append([*possibility, key])
+                accum += 1
                 break
 
             if row.startswith(key):
-                get_possibilities(row[len(key):], trie, accum, [*possibility, key])
+                accum += get_all_possibilities(row[len(key):], trie)
                 node = node[key]
-                possibility = possibility.copy()
                 outer_loop_should_break = False
                 break
+
+    memos[row] = accum
     return accum
 
-#print_divider()
 trie = {}
-atoms = []
+tokens = []
 molecules = {}
+counter = 0
 with open(sys.argv[1], "r") as f:
     for index, row in enumerate(f.readlines()):
         row = row.strip()
         if index == 0:
-            atoms = row.split(', ')
-            atoms.sort(key=len)
-            for a in atoms:
-                insert(a, trie)
-            #print_node(trie)
-            #print_divider()
+            tokens = row.split(', ')
+            tokens.sort(key=len)
+            for t in tokens:
+                insert(t, trie)
+            for t in tokens:
+                get_all_possibilities(t, trie)
 
         if index >= 2:
-            #print(f"Evaluating row {index}: {row}")
-            if is_possible(row, trie):
-                molecules[row] = []
-
-memos = {}
-for a in atoms:
-    memos[a] = get_possibilities(a, trie, [])
-
-atoms.sort(key=len, reverse=True)
-
-counts = defaultdict(int)
-roots = defaultdict(list)
-for m in molecules:
-    #print_divider()
-    #print(m)
-    #print(f"Length: {len(m)}")
-    #print_divider(DASH, HALF+10)
-    shadow = 0
-    matches = []
-    for i in range(len(m)):
-        atom = get_atomic_match(m, atoms, i)
-        if i + len(atom) > shadow:
-            matches.append(atom)
-            shadow = i + len(atom)
-        else:
-            matches.append("")
-    for i, match_str in enumerate(matches):
-        if len(match_str):
-            #print_divider(DOT, HALF)
-            #print(' ' * i, match_str)
-            #print(f"Split {m} on {match_str} at index {i}")
-            #print(f"len: {len(match_str)}")
-            #print(f"i: {i}")
-            pre, post = m[:i], m[i+len(match_str):]
-            #print(f"pre: {pre}")
-            #print(f"post: {post}")
-            pre_possibility = []
-            post_possibility = []
-            if len(pre):
-                pre_possibility = get_possibility(pre, atoms) if is_possible(pre, trie) else []
-            if len(post):
-                post_possibility = get_possibility(post, atoms) if is_possible(post, trie) else []
-            split = [*pre_possibility, match_str, *post_possibility]
-            if "".join(split) == m:
-                #print(split)
-                if split not in roots[m]:
-                    roots[m].append(split)
-                    #print(id(match_str), [*pre_possibility, match_str, *post_possibility])
-    counts[m] = 0
-    print_divider()
-    roots[m].sort()
-    for split in roots[m]:
-        #if m == "rrbgbr":
-        print([token for token in split])
-        #print([len(memos[token]) for token in split])
-        tmp = 1
-        for token in split:
-            #if m == "rrbgbr":
-            #    print(token)
-            #    print(memos[token])
-            tmp *= len(memos[token])
-        counts[m] += tmp
-
-#print_divider(DASH, HALF)
-#total = 0
-#for i, m in enumerate(counts):
-    #total += counts[m]
-    #print(f"{id(i)}{m}: {counts[m]}")
-#print_divider(DASH, HALF)
-#print(f"Total: {total}")
+            count = get_all_possibilities(row, trie)
+            print(f"{row}: count: {count}")
+            counter += count
+print(f"Total Count: {counter}")
