@@ -103,7 +103,7 @@ PRUNE_CONST = 0b111111111111111111111111
 
 def iterate(s0, num_loops=2000):
     init = s0
-    for i in range(num_loops):
+    for _ in range(num_loops):
         s1 = (s0^(s0<<6)) & PRUNE_CONST
         s2 = (s1^(s1>>5)) & PRUNE_CONST
         s0 = (s2^(s2<<11)) & PRUNE_CONST

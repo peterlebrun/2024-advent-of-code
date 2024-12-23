@@ -99,5 +99,25 @@ if len(sys.argv) > 2:
     print("Unrecognized arguments provided.")
     exit()
 
+edges  = defaultdict(list)
 with open(sys.argv[1], "r") as f:
-    return [[c for c in r.strip()] for r in f.readlines()]
+    for row in f.readlines():
+        c1, c2 = row.strip().split("-")
+        edges[c1].append(c2)
+        edges[c2].append(c1)
+
+sets = set()
+for c1, c2s in edges.items():
+    for c2 in c2s:
+        for c3 in edges[c2]:
+            if c3 != c1 and c3 in c2s:
+                sets.add(tuple(sorted([c1, c2, c3])))
+
+counter = 0
+for i, s in enumerate(sets):
+    for x in s:
+        if x[0] == "t":
+            counter += 1
+            break
+
+print(f"Total: {counter}")

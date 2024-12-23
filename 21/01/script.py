@@ -186,7 +186,7 @@ num_mapping = {
 }
 
 START = A
-def get_paths(start, neighbors):
+def get_dir_paths(start, neighbors):
     paths = {
         n: {
             "dist": 0 if n == start else float('inf'),

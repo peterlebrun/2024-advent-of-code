@@ -99,6 +99,8 @@ if len(sys.argv) > 2:
     print("Unrecognized arguments provided.")
     exit()
 
+# this depends on the keys being inserted in a sorted alphabetical order
+# otherwise it won't work
 def insert(string, node):
     for key in node:
         if string.startswith(key):
@@ -111,114 +113,35 @@ def insert(string, node):
             return
     node[string] = {}
 
-def generate_reverse_trie(string, node):
-    is_child = False
-    for key in node:
-        if key.startswith(string):
-            is_child = True
-            generate_reverse_trie(string, node[key])
-    if not is_child:
-        node[string] = {}
-
 def print_node(node, depth=0):
     pad = "-" * depth + (">" if depth else "")
     for key in node:
         print(f"{pad}{key}")
         print_node(node[key], depth+1)
 
-def is_possible(row, trie):
-    if not(row): return True
+memos = defaultdict(int)
+def get_possibility_count(row, trie):
+    if row in memos: return memos[row]
 
     node = trie
-    while len(node):
-        outer_loop_should_break = True
-        for key in node:
-            if row.startswith(key):
-                if is_possible(row[len(key):], trie):
-                    return True
-                node = node[key]
-                outer_loop_should_break = False
+    should_recurse = True
+    while should_recurse:
+        should_recurse = False
+
+        for k in node:
+            if row.startswith(k):
+                # case of row == k means that we have a completed string match -
+                # so add 1. Otherwise, traverse and start counting next chunk of string
+                memos[row] += 1 if row == k else get_possibility_count(row[len(k):], trie)
+                node = node[k]
+                should_recurse = True
                 break
 
-        if outer_loop_should_break:
-            break
+    return memos[row]
 
-    return False
-
-def get_all_matches(haystack, needles, index, include_self = False):
-    """
-    Return all needles that haystack startswith at index.
-    """
-
-    matches = []
-    for n in needles:
-        if haystack.startswith(n, index):
-            if haystack == n and not include_self:
-                continue
-            matches.append(n)
-    return matches
-
-def get_longest_match(haystack, needles, index, exclude=[]):
-    """
-    Return longest atom that haystack startswith at index.
-    """
-    for n in needles:
-        if n in exclude:
-            continue
-        if haystack.startswith(n, index):
-            return n
-    return ""
-
-def get_possibility(molecule, atoms):
-    possibility = []
-
-    exclude = []
-    i = 0
-    while i != len(molecule):
-        #print(molecule)
-        #print("".join(possibility))
-        #print(len(molecule))
-        #print(i)
-        #print(possibility)
-        #print(exclude)
-        tmp = get_longest_match(molecule, atoms, i, exclude)
-        if len(tmp):
-            possibility.append(tmp)
-            i += len(possibility[-1])
-            exclude = []
-        else:
-            i -= len(possibility[-1])
-            exclude.append(possibility.pop())
-
-    return possibility
-
-memos = {}
-def get_all_possibilities(row, trie, accum=0):
-    if row in memos:
-        print(f"Getting {row} from memos")
-        return memos[row]
-
-    node = trie
-    outer_loop_should_break = False
-    while not outer_loop_should_break:
-        outer_loop_should_break = True
-        for key in node:
-            if row == key:
-                accum += 1
-                break
-
-            if row.startswith(key):
-                accum += get_all_possibilities(row[len(key):], trie)
-                node = node[key]
-                outer_loop_should_break = False
-                break
-
-    memos[row] = accum
-    return accum
 
 trie = {}
 tokens = []
-molecules = {}
 counter = 0
 with open(sys.argv[1], "r") as f:
     for index, row in enumerate(f.readlines()):
@@ -228,11 +151,9 @@ with open(sys.argv[1], "r") as f:
             tokens.sort(key=len)
             for t in tokens:
                 insert(t, trie)
-            for t in tokens:
-                get_all_possibilities(t, trie)
 
         if index >= 2:
-            count = get_all_possibilities(row, trie)
+            count = get_possibility_count(row, trie)
             print(f"{row}: count: {count}")
             counter += count
 print(f"Total Count: {counter}")
