@@ -99,5 +99,73 @@ if len(sys.argv) > 2:
     print("Unrecognized arguments provided.")
     exit()
 
+vals = {}
+mapping = defaultdict(list)
+z_vals = {}
+z = "z"
 with open(sys.argv[1], "r") as f:
-    input = [[c for c in row.strip()] for row in f.readlines()]
+    for row in f.readlines():
+        row = row.strip()
+        if row.find(":") != -1:
+            key, vals[key] = row.split(": ")
+            vals[key] = int(vals[key])
+            print(f"Key: {key}, {vals[key]}")
+
+        if row.find("->") != -1:
+            left, right = row.split(" -> ")
+            left = tuple(left.split())
+            print(f"left,right: {left}, {right}")
+            mapping[left].append(right)
+            if right.startswith(z):
+                z_vals[right] = None
+
+for x in mapping:
+    print(f"Mapping: {x}, {mapping[x]}")
+
+for k in z_vals:
+    print(f"{k}, {z_vals[k]}")
+
+counter = 0
+while any([x is None for x in z_vals.values()]):
+    print(f"Loop {counter}")
+    counter += 1
+
+    for (l1, op, l2), outputs in mapping.items():
+        print_divider(DOT, HALF)
+        print(f"Entry: {l1, op, l2, outputs}")
+        if l1 not in vals or l2 not in vals:
+            print(f"l1/l2 missing")
+            continue
+
+        print(f"Before: {vals[l1], vals[l2]}")
+
+        for right in outputs:
+        # vals[right] means it's already been evaluated
+        # not vals[l1|l2] means there isn't enough info to evaluate yet
+            if right in vals:
+                print(f"Already Evaluated")
+                continue
+
+            if op == "XOR":
+                vals[right] = vals[l1]^vals[l2]
+
+            if op == "AND":
+                vals[right] = vals[l1]&vals[l2]
+
+            if op == "OR":
+                vals[right] = vals[l1]|vals[l2]
+
+            if right.startswith(z):
+                z_vals[right] = vals[right]
+            print(f"After: {vals[l1], vals[l2], vals[right]}")
+
+output_bin = 0
+shift = 0
+for k in sorted(z_vals):
+    val = z_vals[k]
+    output_bin += (val << shift)
+    shift += 1
+    print(k, val)
+    print(output_bin)
+
+print(output_bin, int(output_bin))

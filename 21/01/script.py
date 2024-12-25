@@ -157,11 +157,19 @@ dirpad = """
 """
 
 dir_mapping = {
-    A:     {                       DOWN: RIGHT, LEFT: UP   },
-    UP:    {         RIGHT: A,     DOWN: DOWN,             },
-    DOWN:  { UP: UP, RIGHT: RIGHT,              LEFT: LEFT },
-    LEFT:  {         RIGHT: DOWN                           },
-    RIGHT: { UP: A,                             LEFT: DOWN },
+    A:     {                       DOWN: RIGHT, LEFT: UP,   A:A },
+    UP:    {         RIGHT: A,     DOWN: DOWN,             A: UP,},
+    DOWN:  {RIGHT: RIGHT, UP: UP,              LEFT: LEFT, A: DOWN, },
+    LEFT:  {         RIGHT: DOWN,                          A: LEFT,  },
+    RIGHT: { UP: A,                             LEFT: DOWN, A: RIGHT, },
+}
+
+costs_from_A = {
+    A: 0,
+    UP: 1,
+    RIGHT: 1,
+    DOWN: 2,
+    LEFT: 3,
 }
 
 numpad = """
@@ -172,21 +180,50 @@ numpad = """
 """
 
 num_mapping = {
-     '7': {          DOWN: '4',            RIGHT: '8' },
-     '8': {          DOWN: '5', LEFT: '7', RIGHT: '9' },
-     '9': {          DOWN: '6', LEFT: '8'             },
-     '4': { UP: '7', DOWN: '1',            RIGHT: '5' },
-     '5': { UP: '8', DOWN: '2', LEFT: '4', RIGHT: '6' },
-     '6': { UP: '9', DOWN: '3', LEFT: '5'             },
-     '1': { UP: '4',                       RIGHT: '2' },
-     '2': { UP: '5', DOWN: '0', LEFT: '1', RIGHT: '3' },
-     '3': { UP: '6', DOWN: 'A', LEFT: '2'             },
-     '0': { UP: '2',                       RIGHT: 'A' },
-      A : { UP: '3', LEFT: '0'                        },
+     '7': { RIGHT: '8',          DOWN: '4',          A: '7' },
+     '8': { RIGHT: '9',          DOWN: '5', LEFT: '7', A: '8', },
+     '9': {                      DOWN: '6', LEFT: '8', A: '9' },
+     '4': { RIGHT: '5', UP: '7', DOWN: '1',           A: '4',},
+     '5': { RIGHT: '6', UP: '8', DOWN: '2', LEFT: '4', A: '5' },
+     '6': {             UP: '9', DOWN: '3', LEFT: '5', A: '6' },
+     '1': { RIGHT: '2', UP: '4',                      A: '1' },
+     '2': { RIGHT: '3', UP: '5', DOWN: '0', LEFT: '1', A: '2' },
+     '3': {             UP: '6', DOWN: 'A', LEFT: '2', A: '3' },
+     '0': { RIGHT: 'A', UP: '2',                     A: '0' },
+      A : {             UP: '3', LEFT: '0'           ,A: A },
 }
 
 START = A
-def get_dir_paths(start, neighbors):
+def get_paths(start, neighbors=dir_mapping, weights=None):
+    paths = {
+        n: {
+            "dist": 0 if n == start else float('inf'),
+            "path": [],
+        }
+        for n in neighbors
+    }
+
+    unvisited_nodes = [start]
+    visited_nodes = set()
+    while len(unvisited_nodes):
+        unvisited_nodes.sort(key=lambda u: paths[u]["dist"])
+        node = unvisited_nodes.pop(0)
+        visited_nodes.add(node)
+
+        for direction, neighbor in neighbors[node].items():
+            if neighbor in visited_nodes:
+                continue
+            if neighbor not in unvisited_nodes:
+                unvisited_nodes.append(neighbor)
+
+            tmp = paths[node]["dist"] + (1 if not weights else weights[direction])
+            if tmp < paths[neighbor]["dist"]:
+                paths[neighbor]["dist"] = tmp
+                paths[neighbor]["path"] = paths[node]["path"] + [direction]
+
+    return paths
+
+def get_num_paths(start, neighbors=num_mapping):
     paths = {
         n: {
             "dist": 0 if n == start else float('inf'),
@@ -216,15 +253,18 @@ def get_dir_paths(start, neighbors):
 
     return paths
 
-def populate_shortest_paths(mapping):
+def populate_shortest_paths(mapping=dir_mapping, get_weight=None):
     output = {}
     for start in mapping:
-        for end, path in get_paths(start, mapping).items():
+        for end, path in get_paths(start, mapping, get_weight).items():
             output[(start, end)] = path["path"] + [A]
     return output
 
-dir_paths = populate_shortest_paths(dir_mapping)
-num_paths = populate_shortest_paths(num_mapping)
+dir_paths = populate_shortest_paths()
+for x in dir_paths:
+    print(x, dir_paths[x])
+
+num_paths = populate_shortest_paths(num_mapping, costs_from_A)
 
 def get_path(path, mapping=dir_paths):
     output = ""
@@ -234,8 +274,24 @@ def get_path(path, mapping=dir_paths):
         prev = path[i]
     return output
 
+#for p in [">^>", "^>>", ">>^"]:
+    #print(p, get_path(p), len(get_path(p)))
+
 with open(sys.argv[1], "r") as f:
     inputs = [[c for c in row.strip()] for row in f.readlines()]
+
+for row in inputs:
+    print_divider()
+    prev = START
+    print("".join(row))
+    r1=get_path(row, num_paths)
+    print(r1)
+    r2=get_path(r1)
+    print(r2)
+    me=get_path(r2)
+    print(me, len(me))
+
+sys.exit()
 
 def print_nicely(row, num_path, accum):
     row_output = ""
@@ -492,3 +548,9 @@ for row in inputs:
     simulate(path)
     input()
 print(f"Complexity: {complexity}")
+
+
+"""
+"<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A"
+"v<<A>>^AvA^Av<<A>>^AAv<A<A>>^AAvAA^<A>Av<A>^AA<A>Av<A<A>>^AAAvA^<A>A"
+"""
