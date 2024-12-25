@@ -76,6 +76,7 @@ def print_grid(grid, coords=(None, None), neighbors=set(), missing_vals=[]):
                 output += f"\033[91;1;4m{col}\033[0m"
             else:
                 output += f"\033[32;1m{col}\033[0m"
+
         print(f"{lpad(row_index, 3)}: {output}")
 
 def exit():
@@ -94,5 +95,52 @@ if len(sys.argv) > 2:
     print("Unrecognized arguments provided.")
     exit()
 
+def add(vec1, vec2):
+    if len(vec1) != len(vec2):
+        print("Vectors not same length.")
+        return
+    return [vec1[i] + vec2[i] for i in range(len(vec1))]
+
+keys = []
+locks = []
+
+will_start = True
+is_lock = None
+tmp_vec = [0] * 5
+tmp_counter = 1
+inputs = [[]]
 with open(sys.argv[1], "r") as f:
-    inputs = [[c for c in row.strip()] for row in f.readlines()]
+    for row in f.readlines():
+        print("Before:", row, is_lock, tmp_counter, tmp_vec)
+        row = row.strip()
+        if not len(row):
+            inputs.append([])
+            continue
+        inputs[-1].append([1 if c == HASH else 0 for c in row])
+
+for i in inputs:
+    print_divider(DOT)
+    for row in i:
+        print(row)
+    is_lock = sum(i[0]) == 5
+
+    tmp = [0] * 5
+    if is_lock:
+        for j in range(1, 7):
+            tmp = add(tmp, i[j])
+        locks.append(tmp)
+    else:
+        for j in range(0, 6):
+            tmp = add(tmp, i[j])
+        keys.append(tmp)
+
+num_fits = 0
+for k in keys:
+    for l in locks:
+        a = add(k, l)
+        print(k, l, a)
+        if any([x >= 6 for x in a]):
+            continue
+        num_fits += 1
+
+print(f"Num fits: {num_fits}")
