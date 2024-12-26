@@ -175,9 +175,9 @@ def get_path_str(path, mapping=dir_paths):
 
 def get_paths(start, neighbors=num_mapping):
     paths = defaultdict(dict)
+    visited_nodes = set()
 
     unvisited_nodes = [(start, A)]
-    visited_nodes = set()
     paths[(start, A)] = {
         "dist": 0,
         "path": [],
@@ -197,6 +197,7 @@ def get_paths(start, neighbors=num_mapping):
                     "dist": float("inf"),
                     "path": [],
                 }
+
             tmp_path = paths[node]["path"]
             prev_move = A if not len(tmp_path) else tmp_path[-1]
             next_path = get_path(dir_paths[(prev_move, direction)])
@@ -236,14 +237,39 @@ total = 0
 for row in inputs:
     print_divider()
     prev = A
-    print("".join(row))
     num = int("".join(row[0:3]))
+    r1 = get_path_str(row, num_paths)
+    r2 = get_path_str(r1)
+    r3 = get_path_str(r2)
+    r4 = get_path_str(r3)
+    r5 = get_path_str(r4)
+    r6 = get_path_str(r5)
+    r7 = get_path_str(r6)
+    r8 = get_path_str(r7)
+    r9 = get_path_str(r8)
+    r10 = get_path_str(r9)
+    r11 = get_path_str(r10)
+    r12 = get_path_str(r11)
+    r13 = get_path_str(r12)
+    r14 = get_path_str(r13)
+    r15 = get_path_str(r14)
+    r16 = get_path_str(r15)
+    r17 = get_path_str(r16)
+    r18 = get_path_str(r17)
+    r19 = get_path_str(r18)
+    r20 = get_path_str(r19)
+    r21 = get_path_str(r20)
+    r22 = get_path_str(r21)
+    r23 = get_path_str(r22)
+    r24 = get_path_str(r23)
+    r25 = get_path_str(r24)
+    me = get_path_str(r25)
+    length = len(me)
+    complexity = length * num
+    print("".join(row))
     print(num)
-    r1=get_path_str(row, num_paths)
     print(r1)
-    r2=get_path_str(r1)
-    print(r2)
-    me=get_path_str(r2)
+    print(r25)
     print(me, len(me))
     print(len(me) * num)
     total += len(me) * num
