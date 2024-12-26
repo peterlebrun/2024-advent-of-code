@@ -104,6 +104,8 @@ y = "y"
 z = "z"
 vals = {}
 mapping = defaultdict(list)
+rev_mapping = {}
+swaps = {}
 z_vals = {}
 x_input = 0b0
 y_input = 0b0
@@ -125,6 +127,7 @@ with open(sys.argv[1], "r") as f:
             left = tuple(left.split())
             print(f"left,right: {left}, {right}")
             mapping[left].append(right)
+            rev_mapping[right] = left
             if right.startswith(z):
                 z_vals[right] = None
 

@@ -164,14 +164,6 @@ dir_mapping = {
     RIGHT: { UP: A,                             LEFT: DOWN, A: RIGHT, },
 }
 
-costs_from_A = {
-    A: 0,
-    UP: 1,
-    RIGHT: 1,
-    DOWN: 2,
-    LEFT: 3,
-}
-
 numpad = """
 789
 456
@@ -180,116 +172,209 @@ numpad = """
 """
 
 num_mapping = {
-     '7': { RIGHT: '8',          DOWN: '4',          A: '7' },
-     '8': { RIGHT: '9',          DOWN: '5', LEFT: '7', A: '8', },
-     '9': {                      DOWN: '6', LEFT: '8', A: '9' },
-     '4': { RIGHT: '5', UP: '7', DOWN: '1',           A: '4',},
-     '5': { RIGHT: '6', UP: '8', DOWN: '2', LEFT: '4', A: '5' },
-     '6': {             UP: '9', DOWN: '3', LEFT: '5', A: '6' },
-     '1': { RIGHT: '2', UP: '4',                      A: '1' },
-     '2': { RIGHT: '3', UP: '5', DOWN: '0', LEFT: '1', A: '2' },
-     '3': {             UP: '6', DOWN: 'A', LEFT: '2', A: '3' },
-     '0': { RIGHT: 'A', UP: '2',                     A: '0' },
-      A : {             UP: '3', LEFT: '0'           ,A: A },
+     '7': { RIGHT: '8',                     DOWN: '4', },
+     '8': { RIGHT: '9',          LEFT: '7', DOWN: '5', },
+     '9': {                      LEFT: '8', DOWN: '6', },
+     '4': { RIGHT: '5', UP: '7',            DOWN: '1', },
+     '5': { RIGHT: '6', UP: '8', LEFT: '4', DOWN: '2', },
+     '6': {             UP: '9', LEFT: '5', DOWN: '3', },
+     '1': { RIGHT: '2', UP: '4',                       },
+     '2': { RIGHT: '3', UP: '5', LEFT: '1', DOWN: '0', },
+     '3': {             UP: '6', LEFT: '2', DOWN: 'A', },
+     '0': { RIGHT: 'A', UP: '2',                       },
+      A : {             UP: '3', LEFT: '0',            },
 }
 
-START = A
-def get_paths(start, neighbors=dir_mapping, weights=None):
-    paths = {
-        n: {
-            "dist": 0 if n == start else float('inf'),
-            "path": [],
-        }
-        for n in neighbors
-    }
+dir_paths = {
+    ('A', 'A'): ['A'],
+    ('A', '^'): ['<', 'A'],
+    ('A', 'v'): ['v', '<', 'A'],
+    ('A', '<'): ['v', '<', '<', 'A'],
+    ('A', '>'): ['v', 'A'],
+    ('^', 'A'): ['>', 'A'],
+    ('^', '^'): ['A'],
+    ('^', 'v'): ['v', 'A'],
+    ('^', '<'): ['v', '<', 'A'],
+    ('^', '>'): ['>', 'v', 'A'],
+    ('v', 'A'): ['>', '^', 'A'],
+    ('v', '^'): ['^', 'A'],
+    ('v', 'v'): ['A'],
+    ('v', '<'): ['<', 'A'],
+    ('v', '>'): ['>', 'A'],
+    ('<', 'A'): ['>', '>', '^', 'A'],
+    ('<', '^'): ['>', '^', 'A'],
+    ('<', 'v'): ['>', 'A'],
+    ('<', '<'): ['A'],
+    ('<', '>'): ['>', '>', 'A'],
+    ('>', 'A'): ['^', 'A'],
+    ('>', '^'): ['^', '<', 'A'],
+    ('>', 'v'): ['<', 'A'],
+    ('>', '<'): ['<', '<', 'A'],
+    ('>', '>'): ['A'],
+}
 
-    unvisited_nodes = [start]
-    visited_nodes = set()
-    while len(unvisited_nodes):
-        unvisited_nodes.sort(key=lambda u: paths[u]["dist"])
-        node = unvisited_nodes.pop(0)
-        visited_nodes.add(node)
+"""
+379A
 
-        for direction, neighbor in neighbors[node].items():
-            if neighbor in visited_nodes:
-                continue
-            if neighbor not in unvisited_nodes:
-                unvisited_nodes.append(neighbor)
+3->7
+<^<^A v<<A>^Av<A>^A
+^<^<A <Av<A>^Av<A>>^A
+^^<<A <AAv<AA  >>^A
+<<^^A v<<AA>^AA  >A
+<^^<A v<<A>^Av<A>^A>A
+^<<^A <Av<AA>^A>A
 
-            tmp = paths[node]["dist"] + (1 if not weights else weights[direction])
-            if tmp < paths[neighbor]["dist"]:
-                paths[neighbor]["dist"] = tmp
-                paths[neighbor]["path"] = paths[node]["path"] + [direction]
+A->3
+         ^
+    <    A
+ v<<A >>^A
+"""
 
-    return paths
+dir_inputs = {
+    UP: [LEFT, A],
+    DOWN: [DOWN, LEFT, A],
+    RIGHT: [DOWN, A],
+    LEFT: [DOWN, LEFT, LEFT, A],
+    A: [A],
+}
 
-def get_num_paths(start, neighbors=num_mapping):
-    paths = {
-        n: {
-            "dist": 0 if n == start else float('inf'),
-            "path": [],
-        }
-        for n in neighbors
-    }
-
-    unvisited_nodes = [start]
-    visited_nodes = set()
-    while len(unvisited_nodes):
-        unvisited_nodes.sort(key=lambda u: paths[u]["dist"])
-        node = unvisited_nodes.pop(0)
-        visited_nodes.add(node)
-
-        for direction, neighbor in neighbors[node].items():
-            if neighbor in visited_nodes:
-                continue
-            if neighbor not in unvisited_nodes:
-                unvisited_nodes.append(neighbor)
-
-            tmp = paths[node]["dist"] + 1
-
-            if tmp < paths[neighbor]["dist"]:
-                paths[neighbor]["dist"] = tmp
-                paths[neighbor]["path"] = paths[node]["path"] + [direction]
-
-    return paths
-
-def populate_shortest_paths(mapping=dir_mapping, get_weight=None):
-    output = {}
-    for start in mapping:
-        for end, path in get_paths(start, mapping, get_weight).items():
-            output[(start, end)] = path["path"] + [A]
-    return output
-
-dir_paths = populate_shortest_paths()
-for x in dir_paths:
-    print(x, dir_paths[x])
-
-num_paths = populate_shortest_paths(num_mapping, costs_from_A)
+def get_weight(path):
+    return sum([len(dir_inputs[p]) for p in path])
 
 def get_path(path, mapping=dir_paths):
+    output = []
+    prev = A
+    for i in range(len(path)):
+        output += mapping[(prev, path[i])]
+        prev = path[i]
+    return output
+
+def get_path_str(path, mapping=dir_paths):
     output = ""
-    prev = START # First move is always coming from A
+    prev = A
     for i in range(len(path)):
         output += "".join(mapping[(prev, path[i])])
         prev = path[i]
     return output
 
-#for p in [">^>", "^>>", ">>^"]:
-    #print(p, get_path(p), len(get_path(p)))
+def get_paths_with_direction(start, neighbors=num_mapping):
+    #print("Start:",start)
+    paths = defaultdict(dict)
+
+    unvisited_nodes = [(start, A)]
+    visited_nodes = set()
+    paths[(start, A)] = {
+        "dist": 0,
+        "path": [],
+    }
+    while len(unvisited_nodes):
+        #print_divider(DASH, HALF)
+        unvisited_nodes.sort(key=lambda u: paths[u]["dist"])
+        node = unvisited_nodes.pop(0)
+        visited_nodes.add(node)
+        #print(node)
+
+        for direction, neighbor in neighbors[node[0]].items():
+            if (neighbor, direction) in visited_nodes:
+                continue
+            #print_divider(DOT, QUARTER)
+            #print(direction, neighbor)
+            if (neighbor, direction) not in unvisited_nodes:
+                unvisited_nodes.append((neighbor, direction))
+            if (neighbor, direction) not in paths:
+                paths[(neighbor, direction)] = {
+                    "dist": float("inf"),
+                    "path": [],
+                }
+            tmp_path = paths[node]["path"]
+            #print(f"tmp_path: {tmp_path}")
+            prev_move = A if not len(tmp_path) else tmp_path[-1]
+            #print(f"Prev Move: {prev_move}")
+            #directions = dir_paths[(prev_move, direction)]
+            #print(f"r2: {directions}")
+            next_path = get_path(dir_paths[(prev_move, direction)])
+            #print(f"r1: {next_path}")
+            weight = len(next_path)
+            #print(f"prev node weight: {paths[node]['dist']}")
+            #print(f"weight: {weight}")
+            #print(f"prev neighbor weight: {paths[(neighbor, direction)]['dist']}")
+
+            tmp = paths[node]["dist"] + weight
+
+            if tmp < paths[(neighbor, direction)]["dist"]:
+                paths[(neighbor, direction)]["dist"] = tmp
+                paths[(neighbor, direction)]["path"] = paths[node]["path"] + [direction]
+                #print(paths[(neighbor, direction)])
+            #else:
+                #print("Not less")
+
+    # @TODO: Loop through ends, calculate distance to A, that becomes shortest path
+    for _, path in paths.items():
+        last_step = A if not len(path["path"]) else path["path"][-1]
+        next_path = get_path(dir_paths[(last_step, A)])
+        #path["path"] += [A]
+        path["dist"] += len(next_path)
+
+    return paths
+
+def populate_shortest_paths(mapping=num_mapping):
+    output = {}
+    for start in mapping:
+        dists = {}
+        for (end, direc), path in get_paths_with_direction(start, mapping).items():
+            #print(start, direc, end, path)
+            #input()
+            if end in dists:
+                if path["dist"] < dists[end]:
+                    output[(start, end)] = path["path"] + [A]
+                    dists[end] = path["dist"]
+            else:
+                output[(start, end)] = path["path"] + [A]
+                dists[end] = path["dist"]
+    return output
+
+num_paths = populate_shortest_paths(num_mapping)
 
 with open(sys.argv[1], "r") as f:
     inputs = [[c for c in row.strip()] for row in f.readlines()]
 
+total = 0
 for row in inputs:
     print_divider()
-    prev = START
+    prev = A
     print("".join(row))
-    r1=get_path(row, num_paths)
+    num = int("".join(row[0:3]))
+    print(num)
+    r1=get_path_str(row, num_paths)
     print(r1)
-    r2=get_path(r1)
+    r2=get_path_str(r1)
     print(r2)
-    me=get_path(r2)
+    me=get_path_str(r2)
     print(me, len(me))
+    print(len(me) * num)
+    total += len(me) * num
+print(f"Total: {total}")
+
+#for p in [">^>", "^>>", ">>^"]:
+    #print(p, get_path(p), len(get_path(p)))
+
+#print(get_path("^^<<"))
+#print(get_path("<<^^"))
+#              69  8 7   A
+#print("v<<A>>^AAv<A<A>>^AAvAA^<A>Av<A>^AA<A>Av<A<A>>^A")
+#                21 4  7 A
+#print("<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^A")
+
+#print("v<<A>>^AvA^Av<<A>>^AAv<A<A>>^AAvAA^<A>Av<A>^AA<A>Av<A<A>>^AAAvA^<A>A")
+#print("<v<A>>^AvA^A <vA  <AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^ AAAvA<^A>A")
+#print("       ^   A         <<      ^^   A     >>   A        vvv      A")
+
+
+
+#print(get_path("<A>A v<<AA>^AA>A vAA^Av<AAA>^A"))
+#print(get_path("<A>A <AAv<AA>>^A vAA^Av<AAA>^A"))
+#print(get_path("v<<AA>^AA>A"))
+#print(get_path("<AAv<AA>>^A"))
 
 sys.exit()
 
@@ -554,3 +639,67 @@ print(f"Complexity: {complexity}")
 "<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A"
 "v<<A>>^AvA^Av<<A>>^AAv<A<A>>^AAvAA^<A>Av<A>^AA<A>Av<A<A>>^AAAvA^<A>A"
 """
+
+#<<^^A
+#^^<<A
+
+#v<<AA>^AA>A
+#<AAv<A>>^AA
+
+# Inputs 1
+# Left: v<< A >>^ A
+# Up: <A >A
+# Down: v< A ^> A
+# Right: vA ^A
+# A: A
+
+
+def get_paths(start, neighbors=num_mapping):
+    paths = {
+        n: {
+            "dist": 0 if n == start else float('inf'),
+            "path_r2": [],
+            "path_r1": [],
+            "path_me": []
+        }
+        for n in neighbors
+    }
+
+    unvisited_nodes = [start]
+    visited_nodes = set()
+    while len(unvisited_nodes):
+        print_divider(DASH, HALF)
+        unvisited_nodes.sort(key=lambda u: paths[u]["dist"])
+        node = unvisited_nodes.pop(0)
+        if node in visited_nodes:
+            continue
+        visited_nodes.add(node)
+        print(node)
+
+        for direction, neighbor in neighbors[node].items():
+            print_divider(DOT, QUARTER)
+            print(direction, neighbor)
+            if neighbor not in unvisited_nodes:
+                unvisited_nodes.append(neighbor)
+
+            tmp_path = paths[node]["path"]
+            print(f"tmp_path: {tmp_path}")
+            prev_move = A if not len(tmp_path) else tmp_path[-1]
+            print(f"Prev Move: {prev_move}")
+            directions = dir_paths[(prev_move, direction)]
+            print(f"Directions: {directions}")
+            weight = get_weight(dir_paths[(prev_move, direction)])
+            print(f"prev node weight: {paths[node]['dist']}")
+            print(f"weight: {weight}")
+            print(f"prev neighbor weight: {paths[neighbor]['dist']}")
+
+            tmp = paths[node]["dist"] + weight
+
+            if tmp < paths[neighbor]["dist"]:
+                paths[neighbor]["dist"] = tmp
+                paths[neighbor]["path"] = paths[node]["path"] + [direction]
+                print(paths[neighbor])
+            else:
+                print("Not less")
+
+    return paths
