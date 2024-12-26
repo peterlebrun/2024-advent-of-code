@@ -138,7 +138,7 @@ for elem in z_vals:
     print(f"{elem}, {z_vals[elem]}")
 
 
-xy_output = x_input + y_input
+xy_output = x_input & y_input
 
 counter = 0
 while any([elem is None for elem in z_vals.values()]):
