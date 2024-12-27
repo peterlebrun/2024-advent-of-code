@@ -105,6 +105,7 @@ z = "z"
 vals = {}
 mapping = defaultdict(list)
 rev_mapping = {}
+siblings = {}
 swaps = {}
 z_vals = {}
 x_input = 0b0
@@ -127,7 +128,7 @@ with open(sys.argv[1], "r") as f:
             left = tuple(left.split())
             print(f"left,right: {left}, {right}")
             mapping[left].append(right)
-            rev_mapping[right] = left
+            rev_mapping[right] = [left[0], left[2]]
             if right.startswith(z):
                 z_vals[right] = None
 
@@ -136,9 +137,10 @@ for elem in mapping:
 
 for elem in z_vals:
     print(f"{elem}, {z_vals[elem]}")
+input()
 
-
-xy_output = x_input & y_input
+# For test - bitwise AND
+xy_output = x_input + y_input
 
 counter = 0
 while any([elem is None for elem in z_vals.values()]):
@@ -185,3 +187,51 @@ print(x_input, "", bin(x_input))
 print(y_input, "", bin(y_input))
 print(xy_output, bin(xy_output))
 print(z_output, bin(z_output))
+
+xy_tmp = xy_output
+z_tmp = z_output
+
+for i in range(len(bin(xy_output)[1:])):
+    print(bin(xy_tmp))
+    print(bin(z_tmp))
+    print(f"i: {i}, {xy_tmp % 2}, {z_tmp %2}")
+    if xy_tmp % 2 != z_tmp % 2:
+        print(f"2**{i} is not a match!")
+        candidate = i
+    xy_tmp = xy_tmp >> 1
+    z_tmp = z_tmp >> 1
+
+def get_prev(elem, root):
+    inputs = rev_mapping[elem]
+    root[elem] = []
+
+    if inputs[0].startswith(x) or inputs[0].startswith(y):
+        root[elem].append({ inputs[0]: None })
+        root[elem].append({ inputs[1]: None })
+        return
+
+    tmp0 = {}
+    tmp1 = {}
+    root[elem].append(tmp0)
+    root[elem].append(tmp1)
+    get_prev(inputs[0], tmp0)
+    get_prev(inputs[1], tmp1)
+
+def print_node(node, depth=0):
+    pad = "-" * depth + (">" if depth else "")
+    for key in node:
+        if key in siblings:
+            print(f"{pad}{key}{siblings[key]}")
+        else:
+            print(f"{pad}{key}")
+        if node[key]:
+            for elem in node[key]:
+                print_node(elem, depth+1)
+
+print_divider(DOT, HALF)
+for elem in sorted(z_vals):
+    root = {elem: []}
+    get_prev(elem, root)
+    #print(root)
+    print_node(root)
+    input()
