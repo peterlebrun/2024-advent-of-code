@@ -103,13 +103,14 @@ x = "x"
 y = "y"
 z = "z"
 vals = {}
-mapping = defaultdict(list)
+mapping = {}
 rev_mapping = {}
 siblings = {}
 swaps = {}
 z_vals = {}
 x_input = 0b0
 y_input = 0b0
+raw_inputs = []
 with open(sys.argv[1], "r") as f:
     for row in f.readlines():
         row = row.strip()
@@ -117,7 +118,6 @@ with open(sys.argv[1], "r") as f:
             key, val = row.split(": ")
             val = int(val)
             vals[key] = val
-            print(f"Key: {key}, {vals[key]}")
             if key.startswith(x):
                 x_input += (val << int(key[1:]))
             elif key.startswith(y):
@@ -125,106 +125,71 @@ with open(sys.argv[1], "r") as f:
 
         if row.find("->") != -1:
             left, right = row.split(" -> ")
-            left = tuple(left.split())
-            print(f"left,right: {left}, {right}")
-            mapping[left].append(right)
-            rev_mapping[right] = [left[0], left[2]]
+            l1, op, l2 = left.split()
+            first, second = sorted([l1, l2])
+            left = (first, op, second)
+            mapping[left] = right
+            rev_mapping[right] = left
             if right.startswith(z):
                 z_vals[right] = None
 
-for elem in mapping:
-    print(f"Mapping: {elem}, {mapping[elem]}")
-
-for elem in z_vals:
-    print(f"{elem}, {z_vals[elem]}")
+for instr in sorted(mapping):
+    print(instr, "->", mapping[instr])
 input()
 
-# For test - bitwise AND
 xy_output = x_input + y_input
+and_output = x_input & y_input
+xor_output = x_input ^ y_input
 
 counter = 0
 while any([elem is None for elem in z_vals.values()]):
     print(f"Loop {counter}")
     counter += 1
 
-    for (l1, op, l2), outputs in mapping.items():
-        print_divider(DOT, HALF)
-        print(f"Entry: {l1, op, l2, outputs}")
+    for (l1, op, l2), right in mapping.items():
         if l1 not in vals or l2 not in vals:
-            print(f"l1/l2 missing")
             continue
 
-        print(f"Before: {vals[l1], vals[l2]}")
-
-        for right in outputs:
         # vals[right] means it's already been evaluated
         # not vals[l1|l2] means there isn't enough info to evaluate yet
-            if right in vals:
-                print(f"Already Evaluated")
-                continue
+        if right in vals: continue
 
-            if op == "XOR":
-                vals[right] = vals[l1]^vals[l2]
+        if op == "XOR":
+            vals[right] = vals[l1]^vals[l2]
+        elif op == "AND":
+            vals[right] = vals[l1]&vals[l2]
+        elif op == "OR":
+            vals[right] = vals[l1]|vals[l2]
 
-            if op == "AND":
-                vals[right] = vals[l1]&vals[l2]
-
-            if op == "OR":
-                vals[right] = vals[l1]|vals[l2]
-
-            if right.startswith(z):
-                z_vals[right] = vals[right]
-            print(f"After: {vals[l1], vals[l2], vals[right]}")
-
-z_output = 0
-for elem in sorted(z_vals):
-    val = z_vals[elem]
-    z_output += (val << int(elem[1:]))
-    print(elem, val)
-    print(z_output)
-
-print(x_input, "", bin(x_input))
-print(y_input, "", bin(y_input))
-print(xy_output, bin(xy_output))
-print(z_output, bin(z_output))
-
-xy_tmp = xy_output
-z_tmp = z_output
-
-for i in range(len(bin(xy_output)[1:])):
-    print(bin(xy_tmp))
-    print(bin(z_tmp))
-    print(f"i: {i}, {xy_tmp % 2}, {z_tmp %2}")
-    if xy_tmp % 2 != z_tmp % 2:
-        print(f"2**{i} is not a match!")
-        candidate = i
-    xy_tmp = xy_tmp >> 1
-    z_tmp = z_tmp >> 1
+        if right.startswith(z):
+            z_vals[right] = vals[right]
+        print(f"After: {l1, vals[l1], op, l2, vals[l2], right, vals[right]}")
 
 def get_prev(elem, root):
     inputs = rev_mapping[elem]
     root[elem] = []
 
     if inputs[0].startswith(x) or inputs[0].startswith(y):
-        root[elem].append({ inputs[0]: None })
-        root[elem].append({ inputs[1]: None })
+        root[elem].append({ inputs: None })
         return
 
     tmp0 = {}
-    tmp1 = {}
+    tmp2 = {}
     root[elem].append(tmp0)
-    root[elem].append(tmp1)
+    root[elem].append({inputs[1]: None})
+    root[elem].append(tmp2)
     get_prev(inputs[0], tmp0)
-    get_prev(inputs[1], tmp1)
+    get_prev(inputs[2], tmp2)
 
 def print_node(node, depth=0):
-    pad = "-" * depth + (">" if depth else "")
-    for key in node:
-        if key in siblings:
-            print(f"{pad}{key}{siblings[key]}")
+    pad = "-" * depth + ("> " if depth else "")
+    for key, children in node.items():
+        if key in ["XOR", "OR", "AND"]:
+            print(f"{pad}{key}")
+        elif len(children) == 1 and not list(children[0].values())[0]:
+            print(f"{pad}{key} {list(children[0].keys())[0]}")
         else:
             print(f"{pad}{key}")
-        if node[key]:
             for elem in node[key]:
                 print_node(elem, depth+1)
 
@@ -235,3 +200,15 @@ for elem in sorted(z_vals):
     #print(root)
     print_node(root)
     input()
+
+z_output = 0
+for elem in sorted(z_vals):
+    val = z_vals[elem]
+    z_output += (val << int(elem[1:]))
+
+print(x_input, "", bin(x_input))
+print(y_input, "", bin(y_input))
+print(and_output, bin(and_output))
+print(xor_output, bin(xor_output))
+print(xy_output, bin(xy_output))
+print(z_output, bin(z_output))
