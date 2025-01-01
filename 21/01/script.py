@@ -129,18 +129,53 @@ num_mapping = {
       A : {             UP: '3', LEFT: '0',            },
 }
 
+# honestly this is embarassing and no one should use it
+num_paths = {
+    ("A", "0"): [LEFT, A],
+    ("A", "1"): [UP, LEFT, LEFT, A],
+    ("A", "3"): [UP, A],
+    ("A", "4"): [UP, UP, LEFT, LEFT, A],
+    ("A", "5"): [LEFT, UP, UP, A],
+    ("A", "8"): [LEFT, UP, UP, UP, A],
+    ("A", "9"): [UP, UP, UP, A],
+    ("0", "A"): [RIGHT, A],
+    ("0", "2"): [UP, A],
+    ("1", "3"): [RIGHT, RIGHT, A],
+    ("1", "7"): [UP, UP, A],
+    ("3", "A"): [DOWN, A],
+    ("2", "9"): [UP, UP, RIGHT, A],
+    ("3", "4"): [LEFT, LEFT, UP, A],
+    ("3", "7"): [LEFT, LEFT, UP, UP, A],
+    ("3", "9"): [UP, UP, A],
+    ("4", "0"): [RIGHT, DOWN, DOWN, A],
+    ("4", "1"): [DOWN, A],
+    ("4", "5"): [RIGHT, A],
+    ("5", "6"): [RIGHT, A],
+    ("5", "8"): [UP, A],
+    ("6", "A"): [DOWN, DOWN, A],
+    ("6", "8"): [LEFT, UP, A],
+    ("7", "9"): [RIGHT, RIGHT, A],
+    ("8", "A"): [DOWN, DOWN, DOWN, RIGHT, A],
+    ("8", "0"): [DOWN, DOWN, DOWN, A],
+    ("8", "3"): [DOWN, DOWN, RIGHT, A],
+    ("8", "6"): [DOWN, RIGHT, A],
+    ("9", "A"): [DOWN, DOWN, DOWN, A],
+    ("9", "6"): [DOWN, A],
+    ("9", "8"): [LEFT, A],
+}
+
 dir_paths = {
     ('A', 'A'): ['A'],
     ('A', '^'): ['<', 'A'],
-    ('A', 'v'): ['v', '<', 'A'],
+    ('A', 'v'): ['<', 'v', 'A'],
     ('A', '<'): ['v', '<', '<', 'A'],
     ('A', '>'): ['v', 'A'],
     ('^', 'A'): ['>', 'A'],
     ('^', '^'): ['A'],
     ('^', 'v'): ['v', 'A'],
     ('^', '<'): ['v', '<', 'A'],
-    ('^', '>'): ['>', 'v', 'A'],
-    ('v', 'A'): ['>', '^', 'A'],
+    ('^', '>'): ['v', '>', 'A'],
+    ('v', 'A'): ['^', '>', 'A'],
     ('v', '^'): ['^', 'A'],
     ('v', 'v'): ['A'],
     ('v', '<'): ['<', 'A'],
@@ -151,7 +186,7 @@ dir_paths = {
     ('<', '<'): ['A'],
     ('<', '>'): ['>', '>', 'A'],
     ('>', 'A'): ['^', 'A'],
-    ('>', '^'): ['^', '<', 'A'],
+    ('>', '^'): ['<', '^', 'A'],
     ('>', 'v'): ['<', 'A'],
     ('>', '<'): ['<', '<', 'A'],
     ('>', '>'): ['A'],
@@ -212,6 +247,7 @@ def get_paths(start, neighbors=num_mapping):
     for _, path in paths.items():
         prev_move = A if not len(path["path"]) else path["path"][-1]
         next_path = get_path(dir_paths[(prev_move, A)])
+        path["path"] += [A]
         path["dist"] += len(next_path)
 
     return paths
@@ -224,11 +260,11 @@ def populate_shortest_paths(mapping=num_mapping):
             if end in dists:
                 if path["dist"] >= dists[end]:
                     continue
-            output[(start, end)] = path["path"] + [A]
+            output[(start, end)] = path["path"]
             dists[end] = path["dist"]
     return output
 
-num_paths = populate_shortest_paths(num_mapping)
+#num_paths = populate_shortest_paths(num_mapping)
 
 with open(sys.argv[1], "r") as f:
     inputs = [[c for c in row.strip()] for row in f.readlines()]
@@ -240,36 +276,13 @@ for row in inputs:
     num = int("".join(row[0:3]))
     r1 = get_path_str(row, num_paths)
     r2 = get_path_str(r1)
-    r3 = get_path_str(r2)
-    r4 = get_path_str(r3)
-    r5 = get_path_str(r4)
-    r6 = get_path_str(r5)
-    r7 = get_path_str(r6)
-    r8 = get_path_str(r7)
-    r9 = get_path_str(r8)
-    r10 = get_path_str(r9)
-    r11 = get_path_str(r10)
-    r12 = get_path_str(r11)
-    r13 = get_path_str(r12)
-    r14 = get_path_str(r13)
-    r15 = get_path_str(r14)
-    r16 = get_path_str(r15)
-    r17 = get_path_str(r16)
-    r18 = get_path_str(r17)
-    r19 = get_path_str(r18)
-    r20 = get_path_str(r19)
-    r21 = get_path_str(r20)
-    r22 = get_path_str(r21)
-    r23 = get_path_str(r22)
-    r24 = get_path_str(r23)
-    r25 = get_path_str(r24)
-    me = get_path_str(r25)
+    me = get_path_str(r2)
     length = len(me)
     complexity = length * num
     print("".join(row))
     print(num)
-    print(r1)
-    print(r25)
+    print(r1, len(r1))
+    print(r2, len(r2))
     print(me, len(me))
     print(len(me) * num)
     total += len(me) * num

@@ -2,6 +2,7 @@ import sys
 import copy
 from collections import defaultdict
 import math
+from functools import cache
 sys.setrecursionlimit(1073741824)
 
 ZERO = "0"
@@ -129,18 +130,53 @@ num_mapping = {
       A : {             UP: '3', LEFT: '0',            },
 }
 
+# honestly this is embarassing and no one should use it
+num_paths = {
+    ("A", "0"): [LEFT, A],
+    ("A", "1"): [UP, LEFT, LEFT, A],
+    ("A", "3"): [UP, A],
+    ("A", "4"): [UP, UP, LEFT, LEFT, A],
+    ("A", "5"): [LEFT, UP, UP, A],
+    ("A", "8"): [LEFT, UP, UP, UP, A],
+    ("A", "9"): [UP, UP, UP, A],
+    ("0", "A"): [RIGHT, A],
+    ("0", "2"): [UP, A],
+    ("1", "3"): [RIGHT, RIGHT, A],
+    ("1", "7"): [UP, UP, A],
+    ("3", "A"): [DOWN, A],
+    ("2", "9"): [UP, UP, RIGHT, A],
+    ("3", "4"): [LEFT, LEFT, UP, A],
+    ("3", "7"): [LEFT, LEFT, UP, UP, A],
+    ("3", "9"): [UP, UP, A],
+    ("4", "0"): [RIGHT, DOWN, DOWN, A],
+    ("4", "1"): [DOWN, A],
+    ("4", "5"): [RIGHT, A],
+    ("5", "6"): [RIGHT, A],
+    ("5", "8"): [UP, A],
+    ("6", "A"): [DOWN, DOWN, A],
+    ("6", "8"): [LEFT, UP, A],
+    ("7", "9"): [RIGHT, RIGHT, A],
+    ("8", "A"): [DOWN, DOWN, DOWN, RIGHT, A],
+    ("8", "0"): [DOWN, DOWN, DOWN, A],
+    ("8", "3"): [DOWN, DOWN, RIGHT, A],
+    ("8", "6"): [DOWN, RIGHT, A],
+    ("9", "A"): [DOWN, DOWN, DOWN, A],
+    ("9", "6"): [DOWN, A],
+    ("9", "8"): [LEFT, A],
+}
+
 dir_paths = {
     ('A', 'A'): ['A'],
     ('A', '^'): ['<', 'A'],
-    ('A', 'v'): ['v', '<', 'A'],
+    ('A', 'v'): ['<', 'v', 'A'],
     ('A', '<'): ['v', '<', '<', 'A'],
     ('A', '>'): ['v', 'A'],
     ('^', 'A'): ['>', 'A'],
     ('^', '^'): ['A'],
     ('^', 'v'): ['v', 'A'],
     ('^', '<'): ['v', '<', 'A'],
-    ('^', '>'): ['>', 'v', 'A'],
-    ('v', 'A'): ['>', '^', 'A'],
+    ('^', '>'): ['v', '>', 'A'],
+    ('v', 'A'): ['^', '>', 'A'],
     ('v', '^'): ['^', 'A'],
     ('v', 'v'): ['A'],
     ('v', '<'): ['<', 'A'],
@@ -151,7 +187,7 @@ dir_paths = {
     ('<', '<'): ['A'],
     ('<', '>'): ['>', '>', 'A'],
     ('>', 'A'): ['^', 'A'],
-    ('>', '^'): ['^', '<', 'A'],
+    ('>', '^'): ['<', '^', 'A'],
     ('>', 'v'): ['<', 'A'],
     ('>', '<'): ['<', '<', 'A'],
     ('>', '>'): ['A'],
@@ -173,6 +209,65 @@ def get_path_str(path, mapping=dir_paths):
         prev = path[i]
     return output
 
+MAX_DEPTH = 24 # # robots - 1 (start at index 0)
+@cache
+def get_num_steps(pre, post, depth=0):
+    path = dir_paths[(pre, post)]
+
+    if depth == MAX_DEPTH:
+        return len(path)
+
+    length = 0
+    current = A
+    for p in path:
+        length += get_num_steps(current, p, depth+1)
+        current = p
+    return length
+
+def get_path_length(path):
+    path_length = 0
+    prev = A
+    for i in range(len(path)):
+        next_path = num_paths[(prev, path[i])]
+        next_prev = A
+        for j in range(len(next_path)):
+            path_length += get_num_steps(next_prev, next_path[j])
+            next_prev = next_path[j]
+        prev = path[i]
+    return path_length
+
+with open(sys.argv[1], "r") as f:
+    inputs = [[c for c in row.strip()] for row in f.readlines()]
+
+total = 0
+new_total = 0
+for row in inputs:
+    print_divider()
+    prev = A
+    num = int("".join(row[0:3]))
+    r1 = get_path_str(row, num_paths)
+    r2 = get_path_str(r1)
+    r3 = get_path_str(r2)
+    me = get_path_str(r3)
+    length = len(me)
+    complexity = length * num
+    print("".join(row))
+    print(num)
+    print(r1, len(r1))
+    print(r2, len(r2))
+    print(me, len(me))
+    new_get_path_length = get_path_length(row)
+    print("New function:", new_get_path_length)
+    new_complexity = new_get_path_length * num
+    print("New complexity:", new_complexity)
+    print(len(me) * num)
+    total += len(me) * num
+    new_total += new_complexity
+print(f"Total: {total}")
+print(f"New Total: {new_total}")
+
+### Below is no longer used
+
 def get_paths(start, neighbors=num_mapping):
     paths = defaultdict(dict)
     visited_nodes = set()
@@ -182,6 +277,7 @@ def get_paths(start, neighbors=num_mapping):
         "dist": 0,
         "path": [],
     }
+
     while len(unvisited_nodes):
         unvisited_nodes.sort(key=lambda u: paths[u]["dist"])
         node = unvisited_nodes.pop(0)
@@ -212,11 +308,12 @@ def get_paths(start, neighbors=num_mapping):
     for _, path in paths.items():
         prev_move = A if not len(path["path"]) else path["path"][-1]
         next_path = get_path(dir_paths[(prev_move, A)])
+        path["path"] += [A]
         path["dist"] += len(next_path)
 
     return paths
 
-def populate_shortest_paths(mapping=num_mapping):
+def populate_shortest_paths_old(mapping=num_mapping):
     output = {}
     for start in mapping:
         dists = {}
@@ -224,31 +321,76 @@ def populate_shortest_paths(mapping=num_mapping):
             if end in dists:
                 if path["dist"] >= dists[end]:
                     continue
-            output[(start, end)] = path["path"] + [A]
+            output[(start, end)] = path["path"]
             dists[end] = path["dist"]
     return output
 
-num_paths = populate_shortest_paths(num_mapping)
+def get_shortest_path(start, end, neighbors=dir_mapping, depth = 0):
+    pad = "-" * depth + (">" if depth else "")
 
-with open(sys.argv[1], "r") as f:
-    inputs = [[c for c in row.strip()] for row in f.readlines()]
+    paths = defaultdict(dict)
+    visited_nodes = set()
 
-total = 0
-for row in inputs:
-    print_divider()
-    prev = A
-    num = int("".join(row[0:3]))
-    prev = get_path_str(row, num_paths)
-    print(prev)
-    for i in range(24):
-        prev = get_path_str(prev)
-        print(f"{i}: {len(prev)}")
-    length = len(prev)
-    complexity = length * num
-    #print("".join(row))
-    #print(num)
-    #print(prev)
-    #print(prev, length)
-    print(complexity)
-    total += complexity
-print(f"Total: {total}")
+    unvisited_nodes = [(start, A)]
+    paths[(start, A)] = {
+        "dist": 0,
+        "path": [],
+    }
+
+    while len(unvisited_nodes):
+        unvisited_nodes.sort(key=lambda u: paths[u]["dist"])
+        node = unvisited_nodes.pop(0)
+        visited_nodes.add(node)
+
+        for direction, neighbor in neighbors[node[0]].items():
+            if (neighbor, direction) in visited_nodes:
+                continue
+            if (neighbor, direction) not in unvisited_nodes:
+                unvisited_nodes.append((neighbor, direction))
+            if (neighbor, direction) not in paths:
+                paths[(neighbor, direction)] = {
+                    "dist": float("inf"),
+                    "path": [],
+                }
+
+            tmp_path = paths[node]["path"]
+            prev_move = A if not len(tmp_path) else tmp_path[-1]
+
+            next_path = None
+            if depth == MAX_DEPTH:
+                next_path = dir_paths[(prev_move, direction)]
+            else:
+                next_path = get_shortest_path(prev_move, direction, depth=depth + 1)
+
+            tmp = paths[node]["dist"] + len(next_path)
+
+            if tmp < paths[(neighbor, direction)]["dist"]:
+                paths[(neighbor, direction)]["dist"] = tmp
+                paths[(neighbor, direction)]["path"] = paths[node]["path"] + [direction]
+
+    dists = {}
+    for (e, d), path in paths.items():
+        prev_move = A if not len(path["path"]) else path["path"][-1]
+        next_path = (
+            get_path(dir_paths[(prev_move, A)])
+            if depth == MAX_DEPTH
+            else get_shortest_path(prev_move, A, depth=depth + 1)
+        )
+        path["path"] += [A]
+        path["dist"] += len(next_path)
+
+        if e in dists:
+            if path["dist"] >= dists[e]:
+                continue
+
+        memos[(start, e, depth)] = path["path"]
+        dists[e] = path["dist"]
+
+    return memos[(start, end, depth)]
+
+def populate_shortest_num_paths():
+    output = {}
+    for start in num_mapping:
+        for end in num_mapping:
+            output[(start, end)] = get_shortest_path(start, end, num_mapping)
+    return output
